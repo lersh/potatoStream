@@ -7,12 +7,9 @@ var server = net.createServer((socket) => {
     console.log('client connect from  %s:%d', socket.remoteAddress, socket.remotePort);
 
     var deAes = crypto.createDecipher('aes-256-cfb', '123qweASD');
-    //socket.on('data', data => console.dir(data));
-
     var potatoDecode = new PotatoDecode();
     var client = socket
         .pipe(deAes)//解密
-        //.pipe(process.stdout);
         .pipe(potatoDecode);//过滤头部
 
     potatoDecode.on('head', (remote) => {
