@@ -24,7 +24,7 @@ var server = net.createServer((socket) => {
         });
     });
 
-    this.on('error', (err) => {
+    socket.on('error', (err) => {
         console.log('err:' + err.stack);
     });
 });
