@@ -69,9 +69,13 @@ class DecodeStream extends Transform {
                     headLen += 2;
                     headLen += 8;
                     args.dst.port = args.port;
-                    console.log('TimeStamp is %d,Now time is %d', args.timestamp, Date.now());
-
-                    self.emit('head', args.dst);
+                    var timeNow = Date.now();
+                    var interval = timeNow - args.timestamp;
+                    console.log('TimeStamp interval is %d', Math.abs(interval));
+                    if (Math.abs(interval) < 60000)
+                        self.emit('head', args.dst);
+                    else
+                        self.emit('replayAck', '重放攻击');
                 });
             var dataWithoutHead = buf.slice(headLen);//返回去掉头部后的数据
             this.push(dataWithoutHead);
