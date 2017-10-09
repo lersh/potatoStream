@@ -23,6 +23,10 @@ var server = net.createServer((socket) => {
                 .pipe(socket);//将加密后的数据返回给client
         });
     });
+
+    this.on('error', (err) => {
+        console.log('err:' + err.stack);
+    });
 });
 
 
