@@ -9,7 +9,7 @@ function Potato() {
 
 class EncodeStream extends Transform {
     constructor(addr, port) {
-        super()
+        super()//创建this对象
         this.addr = addr;
         this.port = port;
         this._first = 0;
@@ -19,7 +19,9 @@ class EncodeStream extends Transform {
         addr_len.writeUInt16BE(Buffer.byteLength(this.addr, 'utf8'));
         var port_buf = new Buffer(2);
         port_buf.writeUInt16BE(this.port);
-        this.head = Buffer.concat([flag, addr_len, new Buffer(this.addr, 'utf8'), port_buf]);
+        var timestamp_buf = new Buffer(8);//增加时间戳
+        timestamp_buf.writeIntBE(Date.now(), 0, 8);
+        this.head = Buffer.concat([flag, addr_len, new Buffer(this.addr, 'utf8'), port_buf, timestamp_buf]);
     }
 
     _transform(buf, enc, next) {
@@ -60,9 +62,12 @@ class DecodeStream extends Transform {
                         })
                 })
                 .word16be('port')
+                .word64be('timestamp')
                 .tap(function (args) {
                     headLen += 2;
+                    headLen += 8;
                     args.dst.port = args.port;
+                    console.log(args.timestamp);
                     self.emit('head', args.dst);
                 });
             var dataWithoutHead = buf.slice(headLen);//返回去掉头部后的数据
