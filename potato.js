@@ -13,21 +13,21 @@ class EncodeStream extends Transform {
         this.addr = addr;
         this.port = port;
         this._first = 0;
-        this._head = new Buffer(0);
-        var flag = new Buffer([0x1]);
-        var addr_len = new Buffer(2);
-        addr_len.writeUInt16BE(Buffer.byteLength(this.addr, 'utf8'));
-        var port_buf = new Buffer(2);
-        port_buf.writeUInt16BE(this.port);
-        var timestamp_buf = new Buffer(8);//增加时间戳
-        var timeNow = Date.now();
-        timestamp_buf.writeIntBE(timeNow, 0, 8);
-        console.log(timeNow);
-        this.head = Buffer.concat([flag, addr_len, new Buffer(this.addr, 'utf8'), port_buf, timestamp_buf]);
+        this._head = new Buffer(0);//定义头部数据buffer
+        var flag = new Buffer([0x1]);//标志位
+        var addr_len = new Buffer(2);//需要连接的地址的域名的长度
+        addr_len.writeUInt16BE(Buffer.byteLength(this.addr, 'utf8'));//获取需要连接的地址的域名的长度
+        var port_buf = new Buffer(2);//需要连接的端口
+        port_buf.writeUInt16BE(this.port);//写入端口数字
+        var timestamp_buf = new Buffer(8);//时间戳buffer，64位数字
+        var timeNow = Date.now();//获取当前时间戳
+        timestamp_buf.writeIntBE(timeNow, 0, 8);//将当前时间戳写入buffer
+        //console.log(timeNow);
+        this.head = Buffer.concat([flag, addr_len, new Buffer(this.addr, 'utf8'), port_buf, timestamp_buf]);//将这些buffer拼装成头部buffer
     }
 
     _transform(buf, enc, next) {
-        if (this._first === 0) {
+        if (this._first === 0) {//如果是第一次加进来的数据，就增加一个头部数据
             this._first++;
             this.push(this.head);
         }
@@ -44,7 +44,7 @@ class DecodeStream extends Transform {
     }
 
     _transform(buf, enc, next) {
-        let headLen = 0;
+        let headLen = 0;//头部的长度，因为长度不确定，因此需要计算
         var self = this;
 
         if (this._first === 0) {
@@ -71,7 +71,7 @@ class DecodeStream extends Transform {
                     args.dst.port = args.port;
                     var timeNow = Date.now();
                     var interval = timeNow - args.timestamp;
-                    console.log('TimeStamp interval is %d', Math.abs(interval));
+                    //console.log('TimeStamp interval is %d', Math.abs(interval));
                     if (Math.abs(interval) < 60000)
                         self.emit('head', args.dst);
                     else
@@ -80,11 +80,7 @@ class DecodeStream extends Transform {
             var dataWithoutHead = buf.slice(headLen);//返回去掉头部后的数据
             this.push(dataWithoutHead);
         }
-        /*
-        if (headLen === 0) {
-            headLen++;
-            this.push(head);
-        }*/
+
         else {
             this.push(buf)
         }
