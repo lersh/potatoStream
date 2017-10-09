@@ -23,6 +23,18 @@ const server = socks.createServer(function (client) {
 
 	net.connect(potatoPort, potatoAddr, function (err) {//连接远程代理服务器
 		client.reply(0);//连上了就告诉浏览器连通了
+		/*REP应答字段
+			0x00 表示成功
+			0x01 普通SOCKS服务器连接失败
+			0x02 现有规则不允许连接
+			0x03 网络不可达
+			0x04 主机不可达
+			0x05 连接被拒
+			0x06 TTL超时
+			0x07 不支持的命令
+			0x08 不支持的地址类型
+			0x09 - 0xFF未定义
+		*/
 		console.log('connect to potato Server %s:%d', potatoAddr, potatoPort);
 
 		//client.pipe(this).pipe(client);
