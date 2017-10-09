@@ -20,7 +20,9 @@ class EncodeStream extends Transform {
         var port_buf = new Buffer(2);
         port_buf.writeUInt16BE(this.port);
         var timestamp_buf = new Buffer(8);//增加时间戳
-        timestamp_buf.writeIntBE(Date.now(), 0, 8);
+        var timeNow = Date.now();
+        timestamp_buf.writeIntBE(timeNow, 0, 8);
+        console.log(timeNow);
         this.head = Buffer.concat([flag, addr_len, new Buffer(this.addr, 'utf8'), port_buf, timestamp_buf]);
     }
 
@@ -67,7 +69,8 @@ class DecodeStream extends Transform {
                     headLen += 2;
                     headLen += 8;
                     args.dst.port = args.port;
-                    console.log(args.timestamp);
+                    console.log('TimeStamp is %d,Now time is %d', args.timestamp, Date.now());
+
                     self.emit('head', args.dst);
                 });
             var dataWithoutHead = buf.slice(headLen);//返回去掉头部后的数据
