@@ -4,7 +4,17 @@ const net = require('net');
 const Potato = require('./potato');
 const crypto = require('crypto');
 const fs = require('fs');
-const potatoAddr = '127.0.0.1', potatoPort = 1999;
+
+var potatoAddr, potatoPort;
+if (process.argv.length == 4) {
+	potatoAddr = process.argv[2];
+	potatoPort = +process.argv[3];
+}
+else {
+	potatoAddr = 'us.71star.com';
+	potatoPort = 1999;
+}
+
 
 
 const server = socks.createServer(function (client) {
