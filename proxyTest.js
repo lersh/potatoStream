@@ -29,13 +29,14 @@ const server = socks.createServer(function (client) {
 
 		let encode = new Potato.encode(address.address, address.port);
 		let aes = crypto.createCipher('aes-256-cfb', '123qweASD');
-		//let deAes = crypto.createDecipher('aes-256-cfb', '123qweASD');
+		let deAes = crypto.createDecipher('aes-256-cfb', '123qweASD');
 
 		//var ws = fs.createWriteStream('./out.ciphered');
 		client//浏览器的socket
 			.pipe(encode)//发出的请求加上目标地址和端口
 			.pipe(aes)//AES-256-CFB加密
 			.pipe(this)//传给远程代理服务器
+			.pipe(deAes)//将返回的数据解密
 			.pipe(client);//远程代理服务器的数据再回传给浏览器
 
 		this.on('error', (err) => {
