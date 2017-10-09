@@ -36,3 +36,8 @@ var server = net.createServer((socket) => {
 server.listen(1999, () => {
     console.log('listening on 1999');
 });
+
+process.on('uncaughtException', function (err) {
+	console.log("process error: " + err.message);
+	console.log(err.stack);
+});
