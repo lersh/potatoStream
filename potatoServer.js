@@ -21,13 +21,6 @@ var server = net.createServer((socket) => {
             switch (err.code) {
                 case 'ENOTFOUND':
                     console.log('找不到域名: %s', remote.addr);
-                    var replyEncode = Potato.replyEncode(4);
-                    client
-                        .pipe(replyEncode)
-                        .pipe(aes)//将加上头的数据加密
-                        .pipe(socket);
-                    client.write([0x01, 0x02, 0x03]);
-
                     break;
                 case 'ECONNREFUSED':
                     console.log('连接被拒绝: %s:%d', remote.addr, remote.port);
@@ -43,7 +36,6 @@ var server = net.createServer((socket) => {
         d.run(() => {//在域里运行代码，错误会被域捕捉
             net.connect(remote.port, remote.addr, function (err) {//创建一个连接到目标服务器的链接
                 console.log('connect to  %s:%d', remote.addr, remote.port);
-
                 client
                     .pipe(this)//将过滤头部后的数据发给目标服务器
                     .pipe(aes)//将目标服务器返回的数据加密
