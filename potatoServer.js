@@ -21,12 +21,15 @@ var server = net.createServer((socket) => {
                 .pipe(this)//将过滤头部后的数据发给remote
                 .pipe(aes)//将remote返回的数据加密
                 .pipe(socket);//将加密后的数据返回给client
+
+            //处理错误    
+            this.on('error', (err) => {
+                console.log('err:' + err.stack);
+            });
         });
     });
 
-    socket.on('error', (err) => {
-        console.log('err:' + err.stack);
-    });
+
 });
 
 
