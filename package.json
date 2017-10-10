@@ -1,0 +1,25 @@
+{
+  "name": "potatostream",
+  "version": "1.0.0",
+  "description": "potapo socks",
+  "main": "potatoServer.js",
+  "dependencies": {
+    "binary": "^0.3.0",
+    "log4js": "^2.3.4",
+    "socks-proxy": "^1.0.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lersh/potatoStream.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/lersh/potatoStream/issues"
+  },
+  "homepage": "https://github.com/lersh/potatoStream#readme"
+}
