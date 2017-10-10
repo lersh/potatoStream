@@ -1,52 +1,83 @@
 'use strict'
 const net = require('net');
-const Potato = require('./potato');
 const crypto = require('crypto');
 const domain = require('domain');
 
-var server = net.createServer((socket) => {
-    //console.log('client connect from  %s:%d', socket.remoteAddress, socket.remotePort);
+var Potato = require('./potato');
 
-    var aes = crypto.createCipher('aes-256-cfb', '123qweASD');
-    var deAes = crypto.createDecipher('aes-256-cfb', '123qweASD');
-    var decode = new Potato.decode();
-    var client = socket
-        .pipe(deAes)//解密
-        .pipe(decode);//过滤头部
+var
+    algorithm = 'aes-256-cfb',
+    password = 'Synacast123';
 
-    decode.on('head', (remote) => {
+Potato = new Potato(algorithm, password);
 
-        var d = domain.create();//创建一个域，捕获错误用
+
+var potatoServer = net.createServer((pototaClient) => {
+
+    pototaClient.once('data', (data) => {
+        var reqHead = Potato.ResolveHead.ConnectRequest(data);//解析请求头
+        console.log('want to connect %s:%d\r\n', reqHead.dst.addr, reqHead.dst.port);
+        //console.dir(reqHead);
+
+        var sig;//返回信号
+        var d = domain.create();//用来捕捉错误信号的域
+
+        d.run(() => {
+            //尝试连接目标地址
+            var proxySocket = net.connect(reqHead.dst.port, reqHead.dst.addr);
+            //如果连上了
+            proxySocket.on('connect', function () {
+                console.log('connected %s:%d\r\n', this.remoteAddress, this.remotePort);
+                sig = Potato.CreateHead.ConnectReply(Potato.ReplyCode.SUCCEEDED);//创建一个成功信号
+                pototaClient.write(sig);//如果连上了就发送成功信号
+                console.log('Send Succeed Signal to %s:%d\r\n', pototaClient.remoteAddress, pototaClient.remotePort);
+                var cipher = crypto.createCipher(algorithm, password),
+                    decipher = crypto.createDecipher(algorithm, password);
+                pototaClient
+                    .pipe(decipher)
+                    .pipe(this)
+                    .pipe(cipher)
+                    .pipe(pototaClient);
+            });
+        });
+
+        //捕捉错误信号
         d.on('error', (err) => {
             switch (err.code) {
                 case 'ENOTFOUND':
-                    console.log('找不到域名: %s', remote.addr);
+                    console.log('找不到域名: %s', reqHead.addr);
+                    sig = Potato.CreateHead.ConnectReply(Potato.ReplyCode.HOST_UNREACHABLE);
+                    pototaClient.write(sig);
                     break;
                 case 'ECONNREFUSED':
-                    console.log('连接被拒绝: %s:%d', remote.addr, remote.port);
+                    console.log('连接被拒绝: %s:%d', reqHead.addr, reqHead.port);
+                    sig = Potato.CreateHead.ConnectReply(Potato.ReplyCode.CONNECTION_REFUSED);
+                    pototaClient.write(sig);
                     break;
                 case 'ECONNRESET':
-                    console.log('连接被中断: %s:%d', remote.addr, remote.port);
+                    console.log('连接被中断: %s:%d', reqHead.addr, reqHead.port);
+                    sig = Potato.CreateHead.ConnectReply(Potato.ReplyCode.CONNECTION_NOT_ALLOWED);
+                    if (pototaClient.writable)
+                        pototaClient.write(sig);
+                    break;
+                case 'ETIMEDOUT':
+                    console.log('连接超时: %s:%d', reqHead.addr, reqHead.port);
+                    sig = Potato.CreateHead.ConnectReply(Potato.ReplyCode.NETWORK_UNREACHABLE);
+                    pototaClient.write(sig);
                     break;
                 default:
                     console.log('域里未处理的错误:' + err.stack);
+                    sig = Potato.CreateHead.ConnectReply(Potato.ReplyCode.GENERAL_FAILURE);
+                    pototaClient.write(sig);
             }
         });
 
-        d.run(() => {//在域里运行代码，错误会被域捕捉
-            net.connect(remote.port, remote.addr, function (err) {//创建一个连接到目标服务器的链接
-                console.log('connect to  %s:%d', remote.addr, remote.port);
-                client
-                    .pipe(this)//将过滤头部后的数据发给目标服务器
-                    .pipe(aes)//将目标服务器返回的数据加密
-                    .pipe(socket);//将加密后的数据返回给potato的客户端
-            });
-        });
     });
+
 });
 
 
-server.listen(1999, () => {
+potatoServer.listen(1999, () => {
     console.log('listening on 1999');
 });
 
