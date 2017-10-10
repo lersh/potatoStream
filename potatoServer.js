@@ -27,10 +27,9 @@ var potatoServer = net.createServer((pototaClient) => {
             var proxySocket = net.connect(reqHead.dst.port, reqHead.dst.addr);
             //如果连上了
             proxySocket.on('connect', function () {
-                console.log('connected %s:%d\r\n', this.remoteAddress, this.remotePort);
+                //console.log('connected %s:%d\r\n', this.remoteAddress, this.remotePort);
                 sig = Potato.CreateHead.ConnectReply(Potato.ReplyCode.SUCCEEDED);//创建一个成功信号
-                pototaClient.write(sig);//如果连上了就发送成功信号
-                console.log('Send Succeed Signal to %s:%d\r\n', pototaClient.remoteAddress, pototaClient.remotePort);
+                pototaClient.write(sig);//如果连上了就发送成功信号                
                 var cipher = crypto.createCipher(algorithm, password),
                     decipher = crypto.createDecipher(algorithm, password);
                 pototaClient
@@ -83,5 +82,5 @@ potatoServer.listen(1999, () => {
 
 process.on('uncaughtException', function (err) {
     console.log("捕获未处理的错误: " + err.message);
-    console.log(err.stack);
+    console.error(err);
 });
