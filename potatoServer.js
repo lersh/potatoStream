@@ -70,7 +70,7 @@ var potatoServer = net.createServer((pototaClient) => {
                         pototaClient.write(sig);
                     break;
                 default:
-                    logger.info('域里未处理的错误:' + err.stack);
+                    logger.info('域里未处理的错误:' + err.message + err.stack);
                     sig = Potato.CreateHead.ConnectReply(Potato.ReplyCode.GENERAL_FAILURE);
                     if (pototaClient.writable)
                         pototaClient.write(sig);
