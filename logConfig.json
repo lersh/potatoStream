@@ -1,0 +1,42 @@
+{
+    "appenders": {
+        "out": {
+            "type": "console"
+        },
+        "client": {
+            "type": "file",
+            "filename": "./client.log",
+            "maxLogSize": 104800,
+            "numBackups": 100
+        },
+        "server": {
+            "type": "file",
+            "filename": "./server.log",
+            "maxLogSize": 104800,
+            "numBackups": 100
+        }
+    },
+    "categories": {
+        "default": {
+            "appenders": [
+                "out"
+            ],
+            "level": "all"
+        },
+        "server": {
+            "appenders": [
+                "out",
+                "server"
+            ],
+            "level": "info"
+        },
+        "client": {
+            "appenders": [
+                "out",
+                "client"
+            ],
+            "level": "info"
+        }
+    },
+    "replaceConsole": true
+}
