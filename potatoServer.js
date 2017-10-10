@@ -66,7 +66,8 @@ var potatoServer = net.createServer((pototaClient) => {
                 case 'ETIMEDOUT':
                     logger.info('连接超时: %s:%d', reqHead.addr, reqHead.port);
                     sig = Potato.CreateHead.ConnectReply(Potato.ReplyCode.NETWORK_UNREACHABLE);
-                    pototaClient.write(sig);
+                    if (pototaClient.writable)
+                        pototaClient.write(sig);
                     break;
                 default:
                     logger.info('域里未处理的错误:' + err.stack);
