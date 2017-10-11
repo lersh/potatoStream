@@ -65,13 +65,19 @@ const server = socks.createServer(function (client) {
 					potatoSocket.end();//断开和服务器的连接
 					break;
 				default:
-
 			}
 		});
 	});
 
 	client.on('error', (err) => {
 		logger.error('浏览器端连接错误：%s\r\n%s', err.code, err.message);
+		switch (err.code) {
+			case 'EPIPE':
+			case 'ECONNRESET':
+				logger.error('浏览器断开了连接。');
+				break;
+			default:
+		}
 		client.end();
 	});
 });
