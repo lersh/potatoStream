@@ -100,8 +100,8 @@ var potatoServer = net.createServer((pototaClient) => {
 });
 
 
-potatoServer.listen(local_port, () => {
-    logger.info('listening on ' + local_port);
+potatoServer.listen(server_port, () => {
+    logger.info('listening on ' + server_port);
 });
 
 process.on('uncaughtException', function (err) {
