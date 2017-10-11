@@ -29,7 +29,7 @@ else {
 
 const server = socks.createServer(function (client) {
 	var address = client.address;
-	logger.info('client want to connect to %s:%d', address.address, address.port);
+	logger.trace('浏览器想要连接： %s:%d', address.address, address.port);
 
 	net.connect(potatoPort, potatoAddr, function () {//连接远程代理服务器
 		var potatoSocket = this;//potato服务器的连接
@@ -45,7 +45,7 @@ const server = socks.createServer(function (client) {
 			logger.trace(reply);
 
 			client.reply(reply.sig);//将状态发给浏览器
-			logger.info('收到的信号：%d，目标地址： %s:%d', reply.sig, address.address, address.port);
+			logger.trace('收到的信号：%d，目标地址： %s:%d', reply.sig, address.address, address.port);
 			var cipher = crypto.createCipher(algorithm, password),
 				decipher = crypto.createDecipher(algorithm, password);
 			//浏览器收到连通的信号就会开始发送真正的请求数据
@@ -57,12 +57,22 @@ const server = socks.createServer(function (client) {
 		});
 
 		potatoSocket.on('error', (err) => {
-			logger.error('potato服务器错误：' + err);
+			logger.error('potato服务器错误：%s\r\n%s', err.code, err.message);
+			switch (err.code) {
+				case 'ECONNRESET':
+					logger.error('potato服务器断开了连接。');
+					client.end();//断开浏览器连接
+					potatoSocket.end();//断开和服务器的连接
+					break;
+				default:
+
+			}
 		});
 	});
 
 	client.on('error', (err) => {
-		logger.error('浏览器端连接错误：' + err);
+		logger.error('浏览器端连接错误：%s\r\n%s', err.code, err.message);
+		client.end();
 	});
 });
 
