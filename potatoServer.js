@@ -93,7 +93,7 @@ var potatoServer = net.createServer((pototaClient) => {
 
     });
     pototaClient.on('error', (err) => {
-        logger.error("potato客户端错误: " + err);
+        logger.error("potato客户端错误: %s:%d  ", pototaClient.remoteAddress, pototaClient.remotePort, err);
         logger.error('potato客户端可能已经退出或崩溃。\r\n');
     })
 
