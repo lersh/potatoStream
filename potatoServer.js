@@ -64,6 +64,7 @@ var potatoServer = net.createServer((pototaClient) => {
                     break;
                 case 'ECONNRESET':
                     logger.info('连接被中断: %s:%d', reqHead.addr, reqHead.port);
+                    logger.info(err);
                     sig = Potato.CreateHead.ConnectReply(Potato.ReplyCode.CONNECTION_NOT_ALLOWED);
                     if (pototaClient.writable)
                         pototaClient.write(sig);
