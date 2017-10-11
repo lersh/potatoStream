@@ -45,7 +45,7 @@ var potatoServer = net.createServer((pototaClient) => {
 
             proxySocket.on('error', (err) => {
                 logger.error("远程服务器连接错误: %s:%d", reqHead.dst.addr, reqHead.dst.port);
-                logger.error(err.message + '\r\n' + err.trace);
+                logger.error(err.code + '\t' + err.message);
 
                 switch (err.code) {
                     case 'ENOTFOUND':
@@ -53,6 +53,18 @@ var potatoServer = net.createServer((pototaClient) => {
                         sig = Potato.CreateHead.ConnectReply(Potato.ReplyCode.HOST_UNREACHABLE);
                         pototaClient.write(sig);
                         break;
+                    case 'ECONNREFUSED':
+                        logger.info('连接被拒绝: %s:%d', reqHead.addr, reqHead.port);
+                        sig = Potato.CreateHead.ConnectReply(Potato.ReplyCode.CONNECTION_REFUSED);
+                        pototaClient.write(sig);
+                        break;
+                    case 'ETIMEDOUT':
+                        logger.info('连接超时: %s:%d', reqHead.addr, reqHead.port);
+                        sig = Potato.CreateHead.ConnectReply(Potato.ReplyCode.NETWORK_UNREACHABLE);
+                        if (pototaClient.writable)
+                            pototaClient.write(sig);
+                        break;
+                    case 'ECONNRESET':
                     default:
                         proxySocket.end();//断开远程服务器的连接
                         pototaClient.end();//断开和potato客户端的连接
@@ -64,36 +76,11 @@ var potatoServer = net.createServer((pototaClient) => {
 
         //捕捉错误信号
         d.on('error', (err) => {
-            switch (err.code) {
-                case 'ENOTFOUND':
-                    logger.info('找不到域名: %s', reqHead.addr);
-                    sig = Potato.CreateHead.ConnectReply(Potato.ReplyCode.HOST_UNREACHABLE);
-                    pototaClient.write(sig);
-                    break;
-                case 'ECONNREFUSED':
-                    logger.info('连接被拒绝: %s:%d', reqHead.addr, reqHead.port);
-                    sig = Potato.CreateHead.ConnectReply(Potato.ReplyCode.CONNECTION_REFUSED);
-                    pototaClient.write(sig);
-                    break;
-                case 'ECONNRESET':
-                    logger.info('连接被中断: %s:%d', reqHead.addr, reqHead.port);
-                    logger.info(err);
-                    sig = Potato.CreateHead.ConnectReply(Potato.ReplyCode.CONNECTION_NOT_ALLOWED);
-                    if (pototaClient.writable)
-                        pototaClient.write(sig);
-                    break;
-                case 'ETIMEDOUT':
-                    logger.info('连接超时: %s:%d', reqHead.addr, reqHead.port);
-                    sig = Potato.CreateHead.ConnectReply(Potato.ReplyCode.NETWORK_UNREACHABLE);
-                    if (pototaClient.writable)
-                        pototaClient.write(sig);
-                    break;
-                default:
-                    logger.info('域里未处理的错误:' + err.message + err.stack);
-                    sig = Potato.CreateHead.ConnectReply(Potato.ReplyCode.GENERAL_FAILURE);
-                    if (pototaClient.writable)
-                        pototaClient.write(sig);
-            }
+            logger.info('域里未处理的错误:' + err.message + err.stack);
+            sig = Potato.CreateHead.ConnectReply(Potato.ReplyCode.GENERAL_FAILURE);
+            if (pototaClient.writable)
+                pototaClient.write(sig);
+
         });
 
     });
