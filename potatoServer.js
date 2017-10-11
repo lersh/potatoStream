@@ -42,9 +42,11 @@ var potatoServer = net.createServer((pototaClient) => {
                     .pipe(cipher)
                     .pipe(pototaClient);
             });
-            
+
             proxySocket.on('error', (err) => {
                 logger.error("远程服务器连接错误: %s:%d", reqHead.dst.addr, reqHead.dst.port);
+                logger.error(err.message + '\r\n' + err.trace);
+
                 switch (err.code) {
                     case 'ENOTFOUND':
                         logger.info('找不到域名: %s', reqHead.addr);
@@ -97,7 +99,7 @@ var potatoServer = net.createServer((pototaClient) => {
     });
     pototaClient.on('error', (err) => {
         logger.error("potato客户端错误: " + err);
-        logger.error('potato客户端可能已经崩溃。\r\n');
+        logger.error('potato客户端可能已经退出或崩溃。\r\n');
     })
 
 });
