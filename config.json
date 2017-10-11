@@ -1,5 +1,5 @@
 {
-    "server_addr": "gcm.71star.com",
+    "server_addr": "gce.71star.com",
     "server_port": 1999,
     "local_port": 3000,
     "algorithm": "aes-256-gcm",
