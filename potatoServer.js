@@ -43,8 +43,8 @@ var potatoServer = net.createServer((pototaClient) => {
                     .pipe(pototaClient);
             });
             proxySocket.on('error', (err) => {
-                logger.error("远程服务器连接错误: " + err.message);
-                logger.error(err.track);
+                logger.error("远程服务器连接错误: %s:%d", reqHead.dst.addr, reqHead.dst.port);
+                logger.error(err);
                 proxySocket.end();
             });
         });

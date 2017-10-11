@@ -3,13 +3,19 @@ const socks = require('socks-proxy');
 const net = require('net');
 const crypto = require('crypto');
 const fs = require('fs');
+//log4js module
+var log4js = require('log4js');
+var logConfig = require('./logConfig.json');
+log4js.configure(logConfig);
+var logger = log4js.getLogger('server');
 
+//初始化potato函数库
 var Potato = require('./potato');
 var
 	algorithm = 'aes-256-cfb',
 	password = 'Synacast123';
 Potato = new Potato(algorithm, password);
-
+//potato服务器地址
 var potatoAddr, potatoPort;
 if (process.argv.length == 4) {
 	potatoAddr = process.argv[2];
@@ -23,23 +29,23 @@ else {
 
 const server = socks.createServer(function (client) {
 	var address = client.address;
-	console.log('client want to connect to %s:%d', address.address, address.port);
+	logger.info('client want to connect to %s:%d', address.address, address.port);
 
 	net.connect(potatoPort, potatoAddr, function () {//连接远程代理服务器
 		var potatoSocket = this;//potato服务器的连接
 
-		//console.log('连上了potato服务器');
+		logger.trace('连上了potato服务器');
 		//构造一个信令告诉potato服务器要连接的目标地址
 		var req = Potato.CreateHead.ConnectRequest(address.address, address.port);
 		potatoSocket.write(req);//将信令发给potato服务器
-		//console.log('发送连接信令  %s:%d', potatoSocket.remoteAddress, potatoSocket.remotePort);
+		logger.trace('发送连接信令  %s:%d', potatoSocket.remoteAddress, potatoSocket.remotePort);
 
 		potatoSocket.once('data', (data) => {//第一次收到回复时
 			var reply = Potato.ResolveHead.ConnectReply(data);//解析返回的信号
-			//console.dir(reply);
+			logger.trace(reply);
 
 			client.reply(reply.sig);//将状态发给浏览器
-			console.log('收到的信号：%d，目标地址： %s:%d', reply.sig, address.address, address.port);
+			logger.info('收到的信号：%d，目标地址： %s:%d', reply.sig, address.address, address.port);
 			var cipher = crypto.createCipher(algorithm, password),
 				decipher = crypto.createDecipher(algorithm, password);
 			//浏览器收到连通的信号就会开始发送真正的请求数据
@@ -50,7 +56,7 @@ const server = socks.createServer(function (client) {
 				.pipe(client);//远程代理服务器的数据再回传给浏览器
 			//}
 			//else {
-			//	console.log('收到错误信号');
+			//	logger.info('收到错误信号');
 			//	client.reply(reply.sig);
 			//}
 
@@ -62,10 +68,10 @@ const server = socks.createServer(function (client) {
 
 
 server.listen(3000, () => {
-	console.log('listening on 3000');
+	logger.info('listening on 3000');
 });
 
 process.on('uncaughtException', function (err) {
-	console.log("process error: " + err.message);
-	console.log(err.stack);
+	logger.info("process error: " + err.message);
+	logger.info(err.stack);
 });
