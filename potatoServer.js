@@ -44,9 +44,6 @@ var potatoServer = net.createServer((pototaClient) => {
             });
 
             proxySocket.on('error', (err) => {
-                logger.error("远程服务器连接错误: %s:%d", reqHead.dst.addr, reqHead.dst.port);
-                logger.error(err.code + '\t' + err.message);
-
                 switch (err.code) {
                     case 'ENOTFOUND':
                         logger.info('找不到域名: %s', reqHead.addr);
@@ -66,6 +63,8 @@ var potatoServer = net.createServer((pototaClient) => {
                         break;
                     case 'ECONNRESET':
                     default:
+                        logger.error("远程服务器连接错误: %s:%d", reqHead.dst.addr, reqHead.dst.port);
+                        logger.error(err.code + '\t' + err.message);
                         proxySocket.end();//断开远程服务器的连接
                         pototaClient.end();//断开和potato客户端的连接
                         break;
