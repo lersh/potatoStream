@@ -85,8 +85,8 @@ var potatoServer = net.createServer((pototaClient) => {
 
     });
     pototaClient.on('error', (err) => {
-        logger.error("potato客户端错误: " + err.message);
-        logger.error(err.track);
+        logger.error("potato客户端错误: " + err);
+        logger.error('potato客户端可能已经崩溃。\r\n');
     })
 
 });

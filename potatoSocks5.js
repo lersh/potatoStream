@@ -54,13 +54,15 @@ const server = socks.createServer(function (client) {
 				.pipe(potatoSocket)//传给远程代理服务器
 				.pipe(decipher)//将返回的数据解密
 				.pipe(client);//远程代理服务器的数据再回传给浏览器
-			//}
-			//else {
-			//	logger.info('收到错误信号');
-			//	client.reply(reply.sig);
-			//}
-
 		});
+
+		potatoSocket.on('error', (err) => {
+			logger.error('potato服务器错误：' + err);
+		});
+	});
+
+	client.on('error', (err) => {
+		logger.error('浏览器端连接错误：' + err);
 	});
 });
 
@@ -72,6 +74,6 @@ server.listen(3000, () => {
 });
 
 process.on('uncaughtException', function (err) {
-	logger.info("process error: " + err.message);
-	logger.info(err.stack);
+	logger.error("process error: " + err.message);
+	logger.error(err.stack);
 });
