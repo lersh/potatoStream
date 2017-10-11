@@ -8,23 +8,40 @@ var log4js = require('log4js');
 var logConfig = require('./logConfig.json');
 log4js.configure(logConfig);
 var logger = log4js.getLogger('server');
+//读取配置文件
+var config = require('./config.json');
 
 //初始化potato函数库
 var Potato = require('./potato');
 var
 	algorithm = 'aes-256-cfb',
-	password = 'Synacast123';
+	password = '';
+
+//设定加密算法和密码
+if (config.algorithm != null)
+	algorithm = config.algorithm;
+if (config.password != null)
+	password = config.password;
+
 Potato = new Potato(algorithm, password);
 //potato服务器地址
-var potatoAddr, potatoPort;
+var
+	potatoAddr = '127.0.0.1',
+	potatoPort = 1999,
+	local_port = 3000;
+
+if (config.server_addr != null)
+	potatoAddr = config.server_addr;
+if (config.server_port != null)
+	potatoPort = config.server_port;
+if (config.local_port != null)
+	local_port = config.local_port;
+//命令行参数优先级大于配置文件
 if (process.argv.length == 4) {
 	potatoAddr = process.argv[2];
 	potatoPort = +process.argv[3];
 }
-else {
-	potatoAddr = '127.0.0.1';
-	potatoPort = 1999;
-}
+
 
 
 const server = socks.createServer(function (client) {
@@ -60,7 +77,7 @@ const server = socks.createServer(function (client) {
 			logger.error('potato服务器错误：%s\r\n%s', err.code, err.message);
 			switch (err.code) {
 				case 'ECONNRESET':
-					logger.error('potato服务器断开了连接。');
+					logger.error('potato服务器断开了连接。%s:%d', address.address, address.port);
 					client.end();//断开浏览器连接
 					potatoSocket.end();//断开和服务器的连接
 					break;
@@ -85,11 +102,20 @@ const server = socks.createServer(function (client) {
 
 
 
-server.listen(3000, () => {
-	logger.info('listening on 3000');
+server.listen(local_port, () => {
+	logger.info('listening on ' + local_port);
 });
 
 process.on('uncaughtException', function (err) {
-	logger.error("process error: " + err.message);
-	logger.error(err.stack);
+	switch (err.code) {
+		case 'ECONNREFUSED':
+			logger.error('远程服务器拒绝连接，可能已经关闭' + err.message);
+			break;
+		default:
+			logger.error("process error: " + err.message);
+			logger.error(err.stack);
+	}
+
+
+
 });

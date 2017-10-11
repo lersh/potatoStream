@@ -7,15 +7,24 @@ var log4js = require('log4js');
 var logConfig = require('./logConfig.json');
 log4js.configure(logConfig);
 var logger = log4js.getLogger('server');
+//读取配置文件
+var config = require('./config.json');
 
+//初始化potato函数库
 var Potato = require('./potato');
-
 var
     algorithm = 'aes-256-cfb',
-    password = 'Synacast123';
-
+    password = '';
+//设定加密算法和密码
+if (config.algorithm != null)
+    algorithm = config.algorithm;
+if (config.password != null)
+    password = config.password;
 Potato = new Potato(algorithm, password);
 
+var server_port = 1999;
+if (config.server_port != null)
+    server_port = config.server_port;
 
 var potatoServer = net.createServer((pototaClient) => {
 
@@ -91,8 +100,8 @@ var potatoServer = net.createServer((pototaClient) => {
 });
 
 
-potatoServer.listen(1999, () => {
-    logger.info('listening on 1999');
+potatoServer.listen(local_port, () => {
+    logger.info('listening on ' + local_port);
 });
 
 process.on('uncaughtException', function (err) {
