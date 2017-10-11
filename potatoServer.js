@@ -42,6 +42,11 @@ var potatoServer = net.createServer((pototaClient) => {
                     .pipe(cipher)
                     .pipe(pototaClient);
             });
+            proxySocket.on('error', (err) => {
+                logger.error("远程服务器连接错误: " + err.message);
+                logger.error(err.track);
+                proxySocket.end();
+            });
         });
 
         //捕捉错误信号
@@ -78,6 +83,10 @@ var potatoServer = net.createServer((pototaClient) => {
         });
 
     });
+    pototaClient.on('error', (err) => {
+        logger.error("potato客户端错误: " + err.message);
+        logger.error(err.track);
+    })
 
 });
 
