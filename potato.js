@@ -5,6 +5,78 @@ const crypto = require('crypto');
 
 var algorithm, password;
 
+/**
+ * Encrypts text by given key
+ * @param Buffer text to encrypt
+ * @param String masterkey
+ * @returns String encrypted text, base64 encoded
+ */
+function encipherGCM(buff, masterkey) {
+    try {
+        // random initialization vector
+        var iv = crypto.randomBytes(12);
+
+        // random salt
+        var salt = crypto.randomBytes(64);
+
+        // derive key: 32 byte key length - in assumption the masterkey is a cryptographic and NOT a password there is no need for
+        // a large number of iterations. It may can replaced by HKDF
+        var key = crypto.pbkdf2Sync(new Buffer(masterkey), salt, 2145, 32, 'sha512');
+
+        // AES 256 GCM Mode
+        var cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
+
+        // encrypt the given buffer
+        var encrypted = Buffer.concat([cipher.update(buff), cipher.final()]);
+
+        // extract the auth tag
+        var tag = cipher.getAuthTag();
+
+        // generate output
+        return Buffer.concat([salt, iv, tag, encrypted]);
+
+    } catch (e) {
+    }
+
+    // error
+    return null;
+}
+
+/**
+ * Decrypts text by given key
+ * @param Buffer base64 encoded input data
+ * @param String masterkey
+ * @returns Buffer decrypted (original) text
+ */
+function decipherGCM(data, masterkey) {
+    try {
+        var bData = data;
+
+        // convert data to buffers
+        var salt = bData.slice(0, 64);
+        var iv = bData.slice(64, 76);
+        var tag = bData.slice(76, 92);
+        var buff = bData.slice(92);
+
+        // derive key using; 32 byte key length
+        var key = crypto.pbkdf2Sync(new Buffer(masterkey), salt, 2145, 32, 'sha512');
+
+        // AES 256 GCM Mode
+        var decipher = crypto.createDecipheriv('aes-256-gcm', key, iv);
+        decipher.setAuthTag(tag);
+
+        // encrypt the given buffer
+        var decrypted = Buffer.concat([decipher.update(buff), decipher.final()]);
+
+        return decrypted;
+
+    } catch (e) {
+    }
+
+    // error
+    return null;
+}
+
 function Potato(alg, passwd) {
     algorithm = alg;
     password = passwd;
