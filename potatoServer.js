@@ -28,9 +28,9 @@ if (config.server_port != null)
 
 var potatoServer = net.createServer((pototaClient) => {
     var potatoAddr = pototaClient.remoteAddress;
-    var potatoPort = pot.remotePort;
+    var potatoPort = pototaClient.remotePort;
     logger.info('客户端连进来了： %s:%d\r\n', potatoAddr, potatoPort);
-    
+
     pototaClient.once('data', (data) => {
         var reqHead = Potato.ResolveHead.ConnectRequest(data);//解析请求头
         logger.trace('want to connect %s:%d\r\n', reqHead.dst.addr, reqHead.dst.port);
