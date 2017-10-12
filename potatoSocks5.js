@@ -37,9 +37,10 @@ if (config.server_port != null)
 if (config.local_port != null)
 	local_port = config.local_port;
 //命令行参数优先级大于配置文件
-if (process.argv.length == 4) {
+if (process.argv.length == 5) {
 	potatoAddr = process.argv[2];
 	potatoPort = +process.argv[3];
+	local_port = +process.argv[4];
 }
 
 
@@ -53,12 +54,12 @@ const server = socks.createServer(function (client) {
 
 		logger.trace('连上了potato服务器');
 		//构造一个信令告诉potato服务器要连接的目标地址
-		var req = Potato.CreateHead.ConnectRequest(address.address, address.port);
+		var req = Potato.SymbolRequest.Create(address.address, address.port);  //Potato.CreateHead.ConnectRequest(address.address, address.port);
 		potatoSocket.write(req);//将信令发给potato服务器
 		logger.trace('发送连接信令  %s:%d', potatoSocket.remoteAddress, potatoSocket.remotePort);
 
 		potatoSocket.once('data', (data) => {//第一次收到回复时
-			var reply = Potato.ResolveHead.ConnectReply(data);//解析返回的信号
+			var reply = Potato.SymbolPeply.Resolve(data);//解析返回的信号
 			logger.trace(reply);
 
 			client.reply(reply.sig);//将状态发给浏览器

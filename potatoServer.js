@@ -29,22 +29,32 @@ if (config.server_port != null)
 var potatoServer = net.createServer((pototaClient) => {
     var potatoAddr = pototaClient.remoteAddress;
     var potatoPort = pototaClient.remotePort;
-    logger.info('客户端连进来了： %s:%d\r\n', potatoAddr, potatoPort);
+    logger.trace('客户端连进来了： %s:%d\r\n', potatoAddr, potatoPort);
 
     pototaClient.once('data', (data) => {
-        var reqHead = Potato.ResolveHead.ConnectRequest(data);//解析请求头
-        logger.trace('want to connect %s:%d\r\n', reqHead.dst.addr, reqHead.dst.port);
-
         var sig;//返回信号
+
+        var reqSymbol = Potato.SymbolRequest.Resolve(data);  //Potato.ResolveHead.ConnectRequest(data);//解析请求头
+        if (reqSymbol === null) {//连接信令错误
+            logger.error('请求信令错误！来自：%s:%d', potatoAddr, potatoPort);
+            sig = Potato.SymbolPeply.Create(Potato.ReplyCode.COMMAND_NOT_SUPPORTED);//创建一个错误信号
+            pototaClient.write(sig);//返回错误信号
+            pototaClient.end();
+            pototaClient.destroy();
+            return;
+        }
+        logger.trace('want to connect %s:%d\r\n', reqSymbol.dst.addr, reqSymbol.dst.port);
+
+
         var d = domain.create();//用来捕捉错误信号的域
 
         d.run(() => {
             //尝试连接目标地址
-            var proxySocket = net.connect(reqHead.dst.port, reqHead.dst.addr);
+            var proxySocket = net.connect(reqSymbol.dst.port, reqSymbol.dst.addr);
             //如果连上了
             proxySocket.on('connect', function () {
                 logger.trace('connected %s:%d\r\n', this.remoteAddress, this.remotePort);
-                sig = Potato.CreateHead.ConnectReply(Potato.ReplyCode.SUCCEEDED);//创建一个成功信号
+                sig = Potato.SymbolPeply.Create(Potato.ReplyCode.SUCCEEDED);//创建一个成功信号
                 pototaClient.write(sig);//如果连上了就发送成功信号                
                 var cipher = crypto.createCipher(algorithm, password),
                     decipher = crypto.createDecipher(algorithm, password);
@@ -58,24 +68,24 @@ var potatoServer = net.createServer((pototaClient) => {
             proxySocket.on('error', (err) => {
                 switch (err.code) {
                     case 'ENOTFOUND':
-                        logger.info('找不到域名: %s', reqHead.addr);
-                        sig = Potato.CreateHead.ConnectReply(Potato.ReplyCode.HOST_UNREACHABLE);
+                        logger.info('找不到域名: %s', reqSymbol.addr);
+                        sig = Potato.SymbolPeply.Create(Potato.ReplyCode.HOST_UNREACHABLE);
                         pototaClient.write(sig);
                         break;
                     case 'ECONNREFUSED':
-                        logger.info('连接被拒绝: %s:%d', reqHead.addr, reqHead.port);
-                        sig = Potato.CreateHead.ConnectReply(Potato.ReplyCode.CONNECTION_REFUSED);
+                        logger.info('连接被拒绝: %s:%d', reqSymbol.addr, reqSymbol.port);
+                        sig = Potato.SymbolPeply.Create(Potato.ReplyCode.CONNECTION_REFUSED);
                         pototaClient.write(sig);
                         break;
                     case 'ETIMEDOUT':
-                        logger.info('连接超时: %s:%d', reqHead.addr, reqHead.port);
-                        sig = Potato.CreateHead.ConnectReply(Potato.ReplyCode.NETWORK_UNREACHABLE);
+                        logger.info('连接超时: %s:%d', reqSymbol.addr, reqSymbol.port);
+                        sig = Potato.SymbolPeply.Create(Potato.ReplyCode.NETWORK_UNREACHABLE);
                         if (pototaClient.writable)
                             pototaClient.write(sig);
                         break;
                     case 'ECONNRESET':
                     default:
-                        logger.error("远程服务器连接错误: %s:%d", reqHead.dst.addr, reqHead.dst.port);
+                        logger.error("远程服务器连接错误: %s:%d", reqSymbol.dst.addr, reqSymbol.dst.port);
                         logger.error(err.code + '\t' + err.message);
                         proxySocket.end();//断开远程服务器的连接
                         pototaClient.end();//断开和potato客户端的连接
@@ -87,8 +97,8 @@ var potatoServer = net.createServer((pototaClient) => {
 
         //捕捉错误信号
         d.on('error', (err) => {
-            logger.info('域里未处理的错误:' + err.message + err.stack);
-            sig = Potato.CreateHead.ConnectReply(Potato.ReplyCode.GENERAL_FAILURE);
+            logger.error('域里未处理的错误:' + err.message + err.stack);
+            sig = Potato.SymbolPeply.Create(Potato.ReplyCode.GENERAL_FAILURE);
             if (pototaClient.writable)
                 pototaClient.write(sig);
 

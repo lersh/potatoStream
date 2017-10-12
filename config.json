@@ -1,5 +1,5 @@
 {
-    "server_addr": "gce.71star.com",
+    "server_addr": "127.0.0.1",
     "server_port": 1999,
     "local_port": 3000,
     "algorithm": "aes-256-cfb",
