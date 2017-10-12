@@ -71,6 +71,7 @@ function decipherGCM(data, masterkey) {
         return decrypted;
 
     } catch (e) {
+        console.log(e);
     }
 
     // error
@@ -200,11 +201,14 @@ class EncryptStream extends Transform {
             buff_goups.push(buf.slice(i, i + this._MaxLength));
         }
         buff_goups.forEach((buff_item) => {
-            var buff_body = [];
+            var buff_len, buff_body;
             var data = encipherGCM(buff_item, password);
-            buff_body.push(data.length);
-            buff_body.push(data);
-            buff_body = buff_body.concat(buff_body);
+            buff_len = data.length;
+
+            buff_body = new Buffer(2);
+            buff_body.writeUInt16BE(buff_len);
+
+            buff_body = Buffer.concat([buff_body, data]);
             this.push(buff_body);
         });
 
@@ -212,5 +216,58 @@ class EncryptStream extends Transform {
 
     }
 }
+
+class DecryptStream extends Transform {
+    constructor() {
+        super();
+        this._isRemain = false;//有没有遗留数据
+        this._remainBuff = new Buffer(0);//上次遗留的数据
+        //this._remainLength;//待处理的遗留数据的完整长度
+    }
+
+    _transform(buf, enc, next) {
+        var self = this;
+        var currectBuffer;
+        if (!this._isRemain) {//如果没有待处理数据
+            currectBuffer = buf;
+        }
+        else {//如果有待处理数据
+            this._remainBuff = Buffer.concat([this._remainBuff, buf]);//将待处理数据和这次的数据拼接
+            currectBuffer = this._remainBuff;
+        }
+        while (currectBuffer.length > 0) {
+            binary
+                .stream(currectBuffer)
+                .word16be('len')
+                .tap(function (args) {
+                    if (currectBuffer.length < args.len + 2) {//如果收到的数据不完整
+                        self._isRemain = true;
+                        //this._remainLength = args.len;
+                        self._remainBuff = Buffer.concat([self._remainBuff, currectBuffer]);//将这部分数据存入待处理数据
+                        currectBuffer = new Buffer(0);
+                    }
+                    else {
+                        var leftDataLen = 0;//剩下的数据长度
+                        this
+                            .buffer('data', args.len)//取出一块数据
+                            .tap(function (args) {
+                                var decrypted_data = decipherGCM(args.data, password);//解密
+                                self.push(decrypted_data);//push出去
+                                leftDataLen = currectBuffer.length - 2 - args.len;//计算剩下的数据长度
+                            })
+                            .buffer('next_data', leftDataLen)//获取剩下的数据
+                            .tap(function (args) {
+                                currectBuffer = args.next_data;//更新剩下的数据
+                            });
+                    }
+                });
+        }
+        next();
+
+    }
+}
+
+Potato.prototype.EncryptStream = EncryptStream;
+Potato.prototype.DecryptStream = DecryptStream;
 
 module.exports = Potato;
