@@ -109,7 +109,7 @@ server.listen(local_port, () => {
 process.on('uncaughtException', function (err) {
 	switch (err.code) {
 		case 'ECONNREFUSED':
-			logger.error('远程服务器拒绝连接，可能已经关闭' + err.message);
+			logger.error('远程服务器拒绝连接，可能已经关闭. ' + err.message);
 			break;
 		default:
 			logger.error("process error: " + err.message);

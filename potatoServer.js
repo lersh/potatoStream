@@ -27,6 +27,8 @@ if (config.server_port != null)
     server_port = config.server_port;
 
 var potatoServer = net.createServer((pototaClient) => {
+    var potatoAddr = pototaClient.remoteAddress;
+    var potatoPort = pot.remotePort;
 
     pototaClient.once('data', (data) => {
         var reqHead = Potato.ResolveHead.ConnectRequest(data);//解析请求头
@@ -93,7 +95,7 @@ var potatoServer = net.createServer((pototaClient) => {
 
     });
     pototaClient.on('error', (err) => {
-        logger.error("potato客户端错误: %s:%d  ", pototaClient.remoteAddress, pototaClient.remotePort, err);
+        logger.error("potato客户端错误: %s:%d  ", potatoAddr, potatoPort, err);
         logger.error('potato客户端可能已经退出或崩溃。\r\n');
     })
 
