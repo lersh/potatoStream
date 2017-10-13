@@ -194,7 +194,7 @@ Potato.prototype.SymbolPeply = {
 class EncryptStream extends Transform {
     constructor() {
         super();
-        this._MaxLength = 32768;//分块大小32k;
+        this._MaxLength = 65536;//分块大小32k;
     }
 
     _transform(buf, enc, next) {
