@@ -230,6 +230,7 @@ class DecryptStream extends Transform {
         this._isRemain = false;//有没有遗留数据
         this._remainBuff = new Buffer(0);//上次遗留的数据
         this._lastnum = -1;
+        this._usednum = new Array();
         //this._remainLength;//待处理的遗留数据的完整长度
     }
 
@@ -258,8 +259,8 @@ class DecryptStream extends Transform {
                         currectBuffer = new Buffer(0);
                     }
                     else {
-                        if (args.num !== this._lastnum) {
-                            this._lastnum = args.num;
+                        if (self._usednum.indexOf(args.num) === -1) {//如果不存在这个num
+                            self._usednum.push(args.num);
                             var leftDataLen = 0;//剩下的数据长度
                             this
                                 .buffer('data', args.len)//取出一块数据
