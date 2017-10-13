@@ -71,9 +71,6 @@ function decipherGCM(data, masterkey) {
         return decrypted;
 
     } catch (e) {
-        console.dir(bData);
-        console.dir(iv);
-        console.dir(e);
     }
 
     // error
@@ -194,7 +191,8 @@ Potato.prototype.SymbolPeply = {
 class EncryptStream extends Transform {
     constructor() {
         super();
-        this._MaxLength = 65536;//分块大小32k;
+        this._MaxLength = 65000;//分块大小32k;
+        this._num = 0;
     }
 
     _transform(buf, enc, next) {
@@ -204,15 +202,21 @@ class EncryptStream extends Transform {
             buff_goups.push(buf.slice(i, i + this._MaxLength));
         }
         buff_goups.forEach((buff_item) => {
-            var buff_len, buff_body;
+            var data_len, body_len, buff_body, num;
             var data = encipherGCM(buff_item, password);
-            buff_len = data.length;
+            data_len = data.length;
 
-            buff_body = new Buffer(2);
-            buff_body.writeUInt16BE(buff_len);
+            body_len = new Buffer(2);
+            body_len.writeUInt16BE(data_len);
 
-            buff_body = Buffer.concat([buff_body, data]);
+            num = new Buffer(2);
+            num.writeUInt16BE(this._num);
+
+            buff_body = Buffer.concat([num, body_len, data]);
             this.push(buff_body);
+
+            this._num++;
+            //console.log(this._num + ' ' + buff_item.length);
         });
 
         next();
@@ -241,9 +245,11 @@ class DecryptStream extends Transform {
         while (currectBuffer.length > 0) {
             binary
                 .stream(currectBuffer)
+                .word16be('num')
                 .word16be('len')
                 .tap(function (args) {
-                    if (currectBuffer.length < args.len + 2) {//如果当前数据块不完整
+                    console.log(args.num + ' ' + args.len);
+                    if (currectBuffer.length < args.len + 2 + 2) {//如果当前数据块不完整
                         self._isRemain = true;
                         self._remainBuff = currectBuffer;//将这部分数据存入待处理数据
                         //this._remainLength = args.len;
@@ -257,7 +263,7 @@ class DecryptStream extends Transform {
                             .tap(function (args) {
                                 var decrypted_data = decipherGCM(args.data, password);//解密
                                 self.push(decrypted_data);//push出去
-                                leftDataLen = currectBuffer.length - 2 - args.len;//计算剩下的数据长度
+                                leftDataLen = currectBuffer.length - 2 - 2 - args.len;//计算剩下的数据长度
                             })
                             .buffer('next_data', leftDataLen)//获取剩下的数据
                             .tap(function (args) {
