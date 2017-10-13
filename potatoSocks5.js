@@ -71,6 +71,9 @@ const server = socks.createServer(function (client) {
 			var cipher = new EncryptStream();
 			var decipher = new DecryptStream();
 			//浏览器收到连通的信号就会开始发送真正的请求数据
+			decipher.on('drain', () => {
+				console.log('drain on fire!');
+			})
 			client//浏览器的socket
 				.pipe(cipher)//加密
 				.pipe(potatoSocket)//传给远程代理服务器
