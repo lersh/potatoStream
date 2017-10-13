@@ -23,7 +23,8 @@ if (config.password != null)
 Potato = new Potato(algorithm, password);
 var EncryptStream = Potato.EncryptStream;
 var DecryptStream = Potato.DecryptStream;
-var TestStream = Potato.TestStream;
+var EncodeStream = Potato.EncodeStream;
+var DecodeStream = Potato.DecodeStream;
 
 var server_port = 1999;
 if (config.server_port != null)
@@ -63,12 +64,12 @@ var potatoServer = net.createServer((pototaClient) => {
                 //    decipher = crypto.createDecipher(algorithm, password);
                 var cipher = new EncryptStream();
                 var decipher = new DecryptStream();
-                var teststream = new TestStream();
+                var encode = new EncodeStream();
                 pototaClient
                     //.pipe(decipher)//将potato客户端的数据解密
                     .pipe(this)//传给目标服务器
                     //.pipe(cipher)//将目标服务器返回的数据加密
-                    .pipe(teststream)
+                    .pipe(encode)
                     .pipe(pototaClient);//传给potato客户端
             });
 

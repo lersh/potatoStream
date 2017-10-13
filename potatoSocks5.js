@@ -26,7 +26,9 @@ if (config.password != null)
 Potato = new Potato(algorithm, password);
 var EncryptStream = Potato.EncryptStream;
 var DecryptStream = Potato.DecryptStream;
-var TestStream = Potato.TestStream;
+var EncodeStream = Potato.EncodeStream;
+var DecodeStream = Potato.DecodeStream;
+
 //potato服务器地址
 var
 	potatoAddr = '127.0.0.1',
@@ -71,7 +73,7 @@ const server = socks.createServer(function (client) {
 			//	decipher = crypto.createDecipher(algorithm, password);
 			var cipher = new EncryptStream();
 			var decipher = new DecryptStream();
-			var teststream = new TestStream();
+			var decode = new DecodeStream();
 			//浏览器收到连通的信号就会开始发送真正的请求数据
 			decipher.on('drain', () => {
 				console.log('drain on fire!');
@@ -81,7 +83,7 @@ const server = socks.createServer(function (client) {
 				//.pipe(teststream)
 				.pipe(potatoSocket)//传给远程代理服务器
 				//.pipe(decipher)//将返回的数据解密
-				//.pipe(teststream)
+				.pipe(decode)
 				.pipe(client);//远程代理服务器的数据再回传给浏览器
 		});
 

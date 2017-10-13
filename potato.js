@@ -292,23 +292,45 @@ class DecryptStream extends Transform {
     }
 }
 
-class TestStream extends Transform {
+class EncodeStream extends Transform {
     constructor() {
         super();
+        var _xor = 66;
     }
 
     _transform(chunk, enc, next) {
-        console.log(chunk.length);
-        this.push(chunk);
+        var buff = new Buffer(chunk.length);
+        for (let i = 0; i < chunk.length; i++) {
+            buff[i] = chunk[i] ^ this._xor;
+        }
+        console.log(chunk.length + '  ' + buff.length);
+        this.push(buff);
         next();
 
     }
 }
 
+class DecodeStream extends Transform {
+    constructor() {
+        super();
+        var _xor = 66;
+    }
+
+    _transform(chunk, enc, next) {
+        var buff = new Buffer(chunk.length);
+        for (let i = 0; i < chunk.length; i++) {
+            buff[i] = chunk[i] ^ this._xor;
+        }
+        console.log(chunk.length + '  ' + buff.length);
+        this.push(buff);
+        next();
+
+    }
+}
 
 Potato.prototype.EncryptStream = EncryptStream;
 Potato.prototype.DecryptStream = DecryptStream;
-Potato.prototype.TestStream = TestStream;
-
+Potato.prototype.EncodeStream = EncodeStream;
+Potato.prototype.DecodeStream = DecodeStream;
 
 module.exports = Potato;
