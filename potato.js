@@ -297,8 +297,9 @@ class TestStream extends Transform {
         super();
     }
 
-    _transform(buf, enc, next) {
-
+    _transform(chunk, enc, next) {
+        console.log(chunk.length);
+        this.push(chunk);
         next();
 
     }
@@ -307,7 +308,7 @@ class TestStream extends Transform {
 
 Potato.prototype.EncryptStream = EncryptStream;
 Potato.prototype.DecryptStream = DecryptStream;
-
+Potato.prototype.TestStream = TestStream;
 
 
 module.exports = Potato;
