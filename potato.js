@@ -229,6 +229,7 @@ class DecryptStream extends Transform {
         super();
         this._isRemain = false;//有没有遗留数据
         this._remainBuff = new Buffer(0);//上次遗留的数据
+        this._lastnum = -1;
         //this._remainLength;//待处理的遗留数据的完整长度
     }
 
@@ -257,18 +258,30 @@ class DecryptStream extends Transform {
                         currectBuffer = new Buffer(0);
                     }
                     else {
-                        var leftDataLen = 0;//剩下的数据长度
-                        this
-                            .buffer('data', args.len)//取出一块数据
-                            .tap(function (args) {
-                                var decrypted_data = decipherGCM(args.data, password);//解密
-                                self.push(decrypted_data);//push出去
-                                leftDataLen = currectBuffer.length - 2 - 2 - args.len;//计算剩下的数据长度
-                            })
-                            .buffer('next_data', leftDataLen)//获取剩下的数据
-                            .tap(function (args) {
-                                currectBuffer = args.next_data;//更新剩下的数据
-                            });
+                        if (args.num !== this._lastnum) {
+                            this._lastnum = args.num;
+                            var leftDataLen = 0;//剩下的数据长度
+                            this
+                                .buffer('data', args.len)//取出一块数据
+                                .tap(function (args) {
+                                    var decrypted_data = decipherGCM(args.data, password);//解密
+                                    self.push(decrypted_data);//push出去
+                                    leftDataLen = currectBuffer.length - 2 - 2 - args.len;//计算剩下的数据长度
+                                })
+                                .buffer('next_data', leftDataLen)//获取剩下的数据
+                                .tap(function (args) {
+                                    currectBuffer = args.next_data;//更新剩下的数据
+                                });
+                        }
+                        else {//丢弃这块数据
+                            leftDataLen = currectBuffer.length - 2 - 2 - args.len;//计算剩下的数据长度
+                            this
+                                .buffer('next_data', leftDataLen)//获取剩下的数据
+                                .tap(function (args) {
+                                    currectBuffer = args.next_data;//更新剩下的数据
+                                });
+
+                        }
                     }
                 });
         }
