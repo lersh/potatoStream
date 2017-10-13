@@ -295,36 +295,52 @@ class DecryptStream extends Transform {
 class EncodeStream extends Transform {
     constructor() {
         super();
-        var _xor = 66;
+        this._xor = 66;
+        this._cipher = crypto.createCipher(algorithm, password);
     }
 
     _transform(chunk, enc, next) {
-        var buff = new Buffer(chunk.length);
-        for (let i = 0; i < chunk.length; i++) {
-            buff[i] = chunk[i] ^ this._xor;
-        }
+
+        var buff = this._cipher.update(chunk);
         console.log(chunk.length + '  ' + buff.length);
         this.push(buff);
         next();
 
+    }
+    _flush(callback) {
+        try {
+            this.push(this._cipher.final());
+        } catch (e) {
+            callback(e);
+            return;
+        }
+        callback();
     }
 }
 
 class DecodeStream extends Transform {
     constructor() {
         super();
-        var _xor = 66;
+        this._xor = 66;
+        this._decipher = crypto.createDecipher(algorithm, password);
     }
 
     _transform(chunk, enc, next) {
-        var buff = new Buffer(chunk.length);
-        for (let i = 0; i < chunk.length; i++) {
-            buff[i] = chunk[i] ^ this._xor;
-        }
+
+        var buff = this._decipher.update(chunk);
         console.log(chunk.length + '  ' + buff.length);
         this.push(buff);
         next();
 
+    }
+    _flush(callback) {
+        try {
+            this.push(this._decipher.final());
+        } catch (e) {
+            callback(e);
+            return;
+        }
+        callback();
     }
 }
 
