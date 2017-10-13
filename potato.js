@@ -49,15 +49,15 @@ function encipherGCM(buff, masterkey) {
  * @returns Buffer decrypted (original) text
  */
 function decipherGCM(data, masterkey) {
+
+    var bData = data;
+
+    // convert data to buffers
+    var salt = bData.slice(0, 64);
+    var iv = bData.slice(64, 76);
+    var tag = bData.slice(76, 92);
+    var buff = bData.slice(92);
     try {
-        var bData = data;
-
-        // convert data to buffers
-        var salt = bData.slice(0, 64);
-        var iv = bData.slice(64, 76);
-        var tag = bData.slice(76, 92);
-        var buff = bData.slice(92);
-
         // derive key using; 32 byte key length
         var key = crypto.pbkdf2Sync(new Buffer(masterkey), salt, 2145, 32, 'sha512');
 
@@ -71,7 +71,9 @@ function decipherGCM(data, masterkey) {
         return decrypted;
 
     } catch (e) {
-        console.log(e);
+        console.dir(bData);
+        console.dir(iv);
+        console.dir(e);
     }
 
     // error
@@ -155,6 +157,7 @@ Potato.prototype.SymbolRequest = {
         return msg;
     },
 }
+
 //回复数据的信令，包括可以上传数据，或者数据错误等
 Potato.prototype.SymbolPeply = {
     Create: function (code) {
@@ -164,12 +167,12 @@ Potato.prototype.SymbolPeply = {
         var timestamp_buf = new Buffer(8);//时间戳buffer，64位数字
         var timeNow = Date.now();//获取当前时间戳
         timestamp_buf.writeIntBE(timeNow, 0, 8);//将当前时间戳写入buffer
-        var head = Buffer.concat([flag, sig, timestamp_buf]);//将这些buffer拼装成头部buffer
+        var symbol = Buffer.concat([flag, sig, timestamp_buf]);//将这些buffer拼装成头部buffer
 
-        var aes = crypto.createCipher(algorithm, password);
-        head = aes.update(head);
+        //var aes = crypto.createCipher(algorithm, password);
+        symbol = encipherGCM(symbol, password);//试试看用GCM算法 //head = aes.update(head);
 
-        return head;
+        return symbol;
     },
     Resolve: function (buff) {
         //var decipher = crypto.createDecipher(algorithm, password);
@@ -240,10 +243,11 @@ class DecryptStream extends Transform {
                 .stream(currectBuffer)
                 .word16be('len')
                 .tap(function (args) {
-                    if (currectBuffer.length < args.len + 2) {//如果收到的数据不完整
+                    if (currectBuffer.length < args.len + 2) {//如果当前数据块不完整
                         self._isRemain = true;
+                        self._remainBuff = currectBuffer;//将这部分数据存入待处理数据
                         //this._remainLength = args.len;
-                        self._remainBuff = Buffer.concat([self._remainBuff, currectBuffer]);//将这部分数据存入待处理数据
+                        //self._remainBuff = Buffer.concat([self._remainBuff, currectBuffer]);//将这部分数据存入待处理数据
                         currectBuffer = new Buffer(0);
                     }
                     else {

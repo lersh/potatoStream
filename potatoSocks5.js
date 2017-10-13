@@ -24,6 +24,8 @@ if (config.password != null)
 	password = config.password;
 
 Potato = new Potato(algorithm, password);
+var EncryptStream = Potato.EncryptStream;
+var DecryptStream = Potato.DecryptStream;
 //potato服务器地址
 var
 	potatoAddr = '127.0.0.1',
@@ -64,8 +66,10 @@ const server = socks.createServer(function (client) {
 
 			client.reply(reply.sig);//将状态发给浏览器
 			logger.trace('收到的信号：%d，目标地址： %s:%d', reply.sig, address.address, address.port);
-			var cipher = crypto.createCipher(algorithm, password),
-				decipher = crypto.createDecipher(algorithm, password);
+			//var cipher = crypto.createCipher(algorithm, password),
+			//	decipher = crypto.createDecipher(algorithm, password);
+			var cipher = new EncryptStream();
+			var decipher = new DecryptStream();
 			//浏览器收到连通的信号就会开始发送真正的请求数据
 			client//浏览器的socket
 				.pipe(cipher)//加密

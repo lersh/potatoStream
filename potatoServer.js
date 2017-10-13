@@ -21,6 +21,8 @@ if (config.algorithm != null)
 if (config.password != null)
     password = config.password;
 Potato = new Potato(algorithm, password);
+var EncryptStream = Potato.EncryptStream;
+var DecryptStream = Potato.DecryptStream;
 
 var server_port = 1999;
 if (config.server_port != null)
@@ -56,13 +58,15 @@ var potatoServer = net.createServer((pototaClient) => {
                 logger.trace('connected %s:%d\r\n', this.remoteAddress, this.remotePort);
                 sig = Potato.SymbolPeply.Create(Potato.ReplyCode.SUCCEEDED);//创建一个成功信号
                 pototaClient.write(sig);//如果连上了就发送成功信号                
-                var cipher = crypto.createCipher(algorithm, password),
-                    decipher = crypto.createDecipher(algorithm, password);
+                //var cipher = crypto.createCipher(algorithm, password),
+                //    decipher = crypto.createDecipher(algorithm, password);
+                var cipher = new EncryptStream();
+                var decipher = new DecryptStream();
                 pototaClient
-                    .pipe(decipher)
-                    .pipe(this)
-                    .pipe(cipher)
-                    .pipe(pototaClient);
+                    .pipe(decipher)//将potato客户端的数据解密
+                    .pipe(this)//传给目标服务器
+                    .pipe(cipher)//将目标服务器返回的数据加密
+                    .pipe(pototaClient);//传给potato客户端
             });
 
             proxySocket.on('error', (err) => {
