@@ -292,36 +292,12 @@ class DecryptStream extends Transform {
     }
 }
 
-class EncryptStream extends Transform {
+class TestStream extends Transform {
     constructor() {
         super();
-        this._MaxLength = 15 * 1024;//分块大小32k;
-        this._num = 0;
     }
 
     _transform(buf, enc, next) {
-        var buff_goups = [];
-        //将收的的数据分组
-        for (var i = 0, len = buf.length; i < len; i += this._MaxLength) {
-            buff_goups.push(buf.slice(i, i + this._MaxLength));
-        }
-        buff_goups.forEach((buff_item) => {
-            var data_len, body_len, buff_body, num;
-            var data = encipherGCM(buff_item, password);
-            data_len = data.length;
-
-            body_len = new Buffer(2);
-            body_len.writeUInt16BE(data_len);
-
-            num = new Buffer(2);
-            num.writeUInt16BE(this._num);
-
-            buff_body = Buffer.concat([num, body_len, data]);
-            this.push(buff_body);
-
-            this._num++;
-            //console.log(this._num + ' ' + buff_item.length);
-        });
 
         next();
 
