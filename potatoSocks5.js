@@ -72,19 +72,16 @@ const server = socks.createServer(function (client) {
 			logger.trace('收到的信号：%d，目标地址： %s:%d', reply.sig, address.address, address.port);
 			//var cipher = crypto.createCipher(algorithm, password),
 			//	decipher = crypto.createDecipher(algorithm, password);
-			var cipher = new EncryptStream();
-			var decipher = new DecryptStream();
-			var decode = zlib.createGunzip();
+			var cipher = crypto.createCipher(algorithm, password);
+			var decipher = crypto.createDecipher(algorithm, password);
 			//浏览器收到连通的信号就会开始发送真正的请求数据
 			decipher.on('drain', () => {
 				console.log('drain on fire!');
 			})
 			client//浏览器的socket
-				//.pipe(cipher)//加密
-				//.pipe(teststream)
+				.pipe(cipher)//加密
 				.pipe(potatoSocket)//传给远程代理服务器
-				//.pipe(decipher)//将返回的数据解密
-				.pipe(decode)
+				.pipe(decipher)//将返回的数据解密
 				.pipe(client);//远程代理服务器的数据再回传给浏览器
 		});
 

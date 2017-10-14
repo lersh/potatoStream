@@ -63,14 +63,13 @@ var potatoServer = net.createServer((pototaClient) => {
                 pototaClient.write(sig);//如果连上了就发送成功信号                
                 //var cipher = crypto.createCipher(algorithm, password),
                 //    decipher = crypto.createDecipher(algorithm, password);
-                var cipher = new EncryptStream();
-                var decipher = new DecryptStream();
-                var encode = zlib.createGzip();
+                var cipher = crypto.createCipher(algorithm, password);
+                var decipher = crypto.createDecipher(algorithm, password);
+                //var encode = crypto.createCipher(algorithm,password);
                 pototaClient
-                    //.pipe(decipher)//将potato客户端的数据解密
+                    .pipe(decipher)//将potato客户端的数据解密
                     .pipe(this)//传给目标服务器
-                    //.pipe(cipher)//将目标服务器返回的数据加密
-                    .pipe(encode)
+                    .pipe(cipher)//将目标服务器返回的数据加密
                     .pipe(pototaClient);//传给potato客户端
             });
 
