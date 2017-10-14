@@ -1,6 +1,5 @@
 'use strict';
 
-const errors = require('internal/errors');
 const Transform = require('_stream_transform');
 const { _extend } = require('util');
 const { isArrayBufferView } = require('internal/util/types');
@@ -11,6 +10,7 @@ const {
   kMaxLength
 } = require('buffer');
 
+//读取constants里的常量
 const constants = process.binding('constants').zlib;
 const {
   Z_NO_FLUSH, Z_BLOCK, Z_PARTIAL_FLUSH, Z_SYNC_FLUSH, Z_FULL_FLUSH, Z_FINISH,

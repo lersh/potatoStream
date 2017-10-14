@@ -2,6 +2,7 @@
 const net = require('net');
 const crypto = require('crypto');
 const domain = require('domain');
+const zlib = require('zlib');
 //log4js module
 var log4js = require('log4js');
 var logConfig = require('./logConfig.json');
@@ -64,7 +65,7 @@ var potatoServer = net.createServer((pototaClient) => {
                 //    decipher = crypto.createDecipher(algorithm, password);
                 var cipher = new EncryptStream();
                 var decipher = new DecryptStream();
-                var encode = new EncodeStream();
+                var encode = zlib.createGzip();
                 pototaClient
                     //.pipe(decipher)//将potato客户端的数据解密
                     .pipe(this)//传给目标服务器

@@ -3,6 +3,7 @@ const socks = require('socks-proxy');
 const net = require('net');
 const crypto = require('crypto');
 const fs = require('fs');
+const zlib = require('zlib');
 //log4js module
 var log4js = require('log4js');
 var logConfig = require('./logConfig.json');
@@ -73,7 +74,7 @@ const server = socks.createServer(function (client) {
 			//	decipher = crypto.createDecipher(algorithm, password);
 			var cipher = new EncryptStream();
 			var decipher = new DecryptStream();
-			var decode = new DecodeStream();
+			var decode = zlib.createGunzip();
 			//浏览器收到连通的信号就会开始发送真正的请求数据
 			decipher.on('drain', () => {
 				console.log('drain on fire!');
