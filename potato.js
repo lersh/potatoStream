@@ -301,7 +301,7 @@ class EncodeStream extends Transform {
 
     _transform(chunk, enc, next) {
 
-        var buff = this._cipher.update(chunk);
+        var buff = encipherGCM(chunk, password);//this._cipher.update(chunk);
         console.log(chunk.length + '  ' + buff.length);
         this.push(buff);
         next();
@@ -309,7 +309,7 @@ class EncodeStream extends Transform {
     }
     _flush(callback) {
         try {
-            this.push(this._cipher.final());
+            //this.push(this._cipher.final());
         } catch (e) {
             callback(e);
             return;
@@ -327,7 +327,9 @@ class DecodeStream extends Transform {
 
     _transform(chunk, enc, next) {
 
-        var buff = this._decipher.update(chunk);
+        var buff = decipherGCM(chunk, password);//this._decipher.update(chunk);
+        if (buff == null)
+            next(false);
         console.log(chunk.length + '  ' + buff.length);
         this.push(buff);
         next();
@@ -335,7 +337,7 @@ class DecodeStream extends Transform {
     }
     _flush(callback) {
         try {
-            this.push(this._decipher.final());
+            //this.push(this._decipher.final());
         } catch (e) {
             callback(e);
             return;
