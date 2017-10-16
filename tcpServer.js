@@ -20,8 +20,8 @@ var server = net.createServer((clientSocket) => {
 });
 
 
-server.listen(1888, '0.0.0.0', () => {
-    console.log('Listening on 1888...');
+server.listen(6000, '0.0.0.0', () => {
+    console.log('Listening on 6000...');
 });
 
 process.on('uncaughtException', function (err) {
