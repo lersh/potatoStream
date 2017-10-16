@@ -7,7 +7,7 @@ var option = {
     highWaterMark: 2,
     transform: function (buf, enc, next) {
         var len = buf.readUInt32BE(0, 4);
-        console.log(i++, 'get', this.highWaterMark, buf.length);
+        console.log(i++, 'get', buf.length);
         next(null, buf)
     }
 }
