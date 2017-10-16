@@ -1,5 +1,6 @@
 'use strict';
 const net = require('net');
+const stream = require('stream');
 
 const transform = stream.Transform({
     highWaterMark: 2,
