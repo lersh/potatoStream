@@ -180,11 +180,11 @@ class DecryptStream extends Transform {
         next();
     }
 }
-/*
+
 net.connect(6000, 'pi.71star.com', function () {
     var server = this;
     var decryptStream=new DecryptStream();
     server.pipe(decryptStream).pipe(ws);
-});*/
+});
 
-rs.pipe(Encodetransform).pipe(ws);
+//rs.pipe(Encodetransform).pipe(ws);
