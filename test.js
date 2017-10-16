@@ -142,10 +142,49 @@ const transform = stream.Transform({
     }
 })
 
+const Transform = stream.Transform;
+class DecryptStream extends Transform {
+    constructor() {
+        super();
+        this._isRemain = false;//有没有遗留数据
+        this._remainBuff = new Buffer(0);//上次遗留的数据
+    }
 
+    _transform(buf, enc, next) {
+        var self = this;
+        var currectBuffer;
+        console.log(buf.length);
+        if (!this._isRemain) {//如果没有待处理数据
+            currectBuffer = buf;
+        }
+        else {//如果有待处理数据
+            this._remainBuff = Buffer.concat([this._remainBuff, buf]);//将待处理数据和这次的数据拼接
+            currectBuffer = this._remainBuff;
+        }
+        while (currectBuffer.length > 0) {
+            var buff_len = currectBuffer.slice(0, 4);
+            var len = buff_len.readUInt32BE(0);
+            if (currectBuffer.length < len + 4) {//如果当前数据块不完整
+                this._isRemain = true;
+                this._remainBuff = currectBuffer;//将这部分数据存入待处理数据
+                currectBuffer = new Buffer(0);
+            }
+            else {
+                var data = currectBuffer.slice(4, len + 4);//取出一块数据,slice第二个参数是索引值
+                var decrypted_data = decipherGCM(data, password);//解密
+                this.push(decrypted_data);//push出去
+                var next_data = currectBuffer.slice(len + 4);//获取剩下的数据
+                currectBuffer = next_data;
+            }
+        }
+        next();
+    }
+}
+/*
 net.connect(6000, 'pi.71star.com', function () {
     var server = this;
-    server.pipe(Decodetransform).pipe(ws);
-});
+    var decryptStream=new DecryptStream();
+    server.pipe(decryptStream).pipe(ws);
+});*/
 
-//rs.pipe(Encodetransform).pipe(ws);
+rs.pipe(Encodetransform).pipe(ws);
