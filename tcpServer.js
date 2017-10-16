@@ -3,15 +3,18 @@ const net = require('net');
 const stream = require('stream');
 
 var i = 1;
-const transform = stream.Transform({
+var option = {
     highWaterMark: 2,
     transform: function (buf, enc, next) {
-        console.log(i++, 'get', buf.length);
+        var len = buf.readUInt32BE(0, 4);
+        console.log(i++, 'get', this.highWaterMark, buf.length);
         next(null, buf)
     }
-})
+}
 
 var server = net.createServer((clientSocket) => {
+    i = 1;
+    var transform = stream.Transform(option);
     var rs = require('fs').createReadStream('./test_Ciphered.png')
     rs.pipe(transform).pipe(clientSocket);
 });
