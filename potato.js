@@ -199,9 +199,9 @@ class EncryptStream extends Transform {
         var buff_len = new Buffer(4);
         buff_len.writeUInt32BE(encode_buff.length);
         var encode_buff_head = Buffer.concat([buff_len, encode_buff]);
-        var md5 = crypto.createHash('md5');
-        var md5_code = md5.update(buf).digest('hex');
-        console.log(this.i++, 'buf', buf.length, 'encode_buff_head', encode_buff_head.length, 'md5', md5_code);
+        //var md5 = crypto.createHash('md5');
+        //var md5_code = md5.update(buf).digest('hex');
+        //console.log(this.i++, 'buf', buf.length, 'encode_buff_head', encode_buff_head.length, 'md5', md5_code);
         next(null, encode_buff_head);
     }
 }
@@ -244,16 +244,16 @@ class DecryptStream extends Transform {
                 var decrypted_data = decipherGCM(data, password);//解密
                 if (decrypted_data === null)
                     console.log('Decrypto Error!');
-                var md5 = crypto.createHash('md5');
-                var md5_code = md5.update(decrypted_data).digest('hex');
-                console.log('%d 解密后数据大小 %d md5 %s', this.i++, decrypted_data.length, md5_code);
+                //var md5 = crypto.createHash('md5');
+                //var md5_code = md5.update(decrypted_data).digest('hex');
+                //console.log('%d 解密后数据大小 %d md5 %s', this.i++, decrypted_data.length, md5_code);
 
                 var next_data = currectBuffer.slice(len + 4);//获取剩下的数据
                 //console.log('剩下的数据大小 %d \r\n', next_data.length);
                 if (next_data.length === 0) {
                     this._isRemain = false;//没有遗留数据
                     this._remainBuff = new Buffer(0);//上次遗留的数据清0
-                    console.log('剩下的数据大小 %d \r\n', next_data.length);
+                    //console.log('剩下的数据大小 %d \r\n', next_data.length);
                 }
                 currectBuffer = next_data;
                 this.push(decrypted_data);//push出去
