@@ -5,7 +5,7 @@
 
 1. potatoServer.js是服务器。
 2. potatoSocks.js是本地的socks5代理服务器。
-3. 使用git clone到本地后，请先执行npm install来安装依赖组件
+3. 使用git clone到本地后，请先执行npm install来安装依赖组件
 4. 然后新建一个config.josn文件作为配置
 
 ```
