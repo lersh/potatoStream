@@ -228,16 +228,15 @@ class EncryptStream extends Transform {
 class DecryptStream extends Transform {
     constructor() {
         super();
+        this.highWaterMark = 2;
         this._isRemain = false;//有没有遗留数据
         this._remainBuff = new Buffer(0);//上次遗留的数据
-        this._lastnum = -1;
-        this._usednum = new Array();
-        //this._remainLength;//待处理的遗留数据的完整长度
     }
 
     _transform(buf, enc, next) {
         var self = this;
         var currectBuffer;
+        console.log(buf.length);
         if (!this._isRemain) {//如果没有待处理数据
             currectBuffer = buf;
         }
@@ -246,49 +245,24 @@ class DecryptStream extends Transform {
             currectBuffer = this._remainBuff;
         }
         while (currectBuffer.length > 0) {
-            binary
-                .stream(currectBuffer)
-                .word16be('num')
-                .word16be('len')
-                .tap(function (args) {
-                    console.log(args.num + ' ' + args.len);
-                    if (currectBuffer.length < args.len + 2 + 2) {//如果当前数据块不完整
-                        self._isRemain = true;
-                        self._remainBuff = currectBuffer;//将这部分数据存入待处理数据
-                        //this._remainLength = args.len;
-                        //self._remainBuff = Buffer.concat([self._remainBuff, currectBuffer]);//将这部分数据存入待处理数据
-                        currectBuffer = new Buffer(0);
-                    }
-                    else {
-                        if (self._usednum.indexOf(args.num) === -1) {//如果不存在这个num
-                            self._usednum.push(args.num);
-                            var leftDataLen = 0;//剩下的数据长度
-                            this
-                                .buffer('data', args.len)//取出一块数据
-                                .tap(function (args) {
-                                    var decrypted_data = decipherGCM(args.data, password);//解密
-                                    self.push(decrypted_data);//push出去
-                                    leftDataLen = currectBuffer.length - 2 - 2 - args.len;//计算剩下的数据长度
-                                })
-                                .buffer('next_data', leftDataLen)//获取剩下的数据
-                                .tap(function (args) {
-                                    currectBuffer = args.next_data;//更新剩下的数据
-                                });
-                        }
-                        else {//丢弃这块数据
-                            leftDataLen = currectBuffer.length - 2 - 2 - args.len;//计算剩下的数据长度
-                            this
-                                .buffer('next_data', leftDataLen)//获取剩下的数据
-                                .tap(function (args) {
-                                    currectBuffer = args.next_data;//更新剩下的数据
-                                });
-
-                        }
-                    }
-                });
+            var buff_len = currectBuffer.slice(0, 4);
+            var len = buff_len.readUInt32BE(0);
+            if (currectBuffer.length < len + 4) {//如果当前数据块不完整
+                this._isRemain = true;
+                this._remainBuff = currectBuffer;//将这部分数据存入待处理数据
+                currectBuffer = new Buffer(0);
+            }
+            else {
+                var data = currectBuffer.slice(4, len + 4);//取出一块数据,slice第二个参数是索引值
+                var decrypted_data = decipherGCM(data, password);//解密
+                if (decrypted_data === null)
+                    console.log('Decrypto Error!');
+                this.push(decrypted_data);//push出去
+                var next_data = currectBuffer.slice(len + 4);//获取剩下的数据
+                currectBuffer = next_data;
+            }
         }
         next();
-
     }
 }
 
