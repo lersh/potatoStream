@@ -3,10 +3,11 @@ const net = require('net');
 const crypto = require('crypto');
 const stream = require('stream');
 const fs = require('fs');
+const through2 = require('through2');
 
 const password = '123qweASD';
 
-const ws = fs.createWriteStream('./test_Deciphered.jpg');
+const ws = fs.createWriteStream('./test_Deciphered.png');
 
 /**
  * Decrypts text by given key
@@ -44,13 +45,12 @@ function decipherGCM(data, masterkey) {
 }
 
 
-var c = 0, i = 1;
+var i = 1;
 
 const Transform = stream.Transform;
 class DecryptStream extends Transform {
     constructor() {
         super();
-        this.highWaterMark = 2;
         this._isRemain = false;//有没有遗留数据
         this._remainBuff = new Buffer(0);//上次遗留的数据
     }
@@ -95,10 +95,59 @@ class DecryptStream extends Transform {
 }
 
 
+var _isRemain = false;
+var _remainBuff = new Buffer(0);
+
+var Decode = through2.ctor(
+    function (buf, encoding, next) {
+        var self = this;
+        var currectBuffer;
+        console.log('收到的buf长度 %d', buf.length);
+        if (!_isRemain) {//如果没有待处理数据
+            currectBuffer = buf;
+            console.log('没有待处理数据\r\n');
+        }
+        else {//如果有待处理数据
+            console.log('有待处理数据');
+            _remainBuff = Buffer.concat([_remainBuff, buf]);//将待处理数据和这次的数据拼接
+            currectBuffer = _remainBuff;
+        }
+        while (currectBuffer.length > 0) {
+            var buff_len = currectBuffer.slice(0, 4);
+            var len = buff_len.readUInt32BE(0);
+            if (currectBuffer.length < len + 4) {//如果当前数据块不完整
+                _isRemain = true;
+                _remainBuff = currectBuffer;//将这部分数据存入待处理数据
+                currectBuffer = new Buffer(0);
+            }
+            else {
+                var data = currectBuffer.slice(4, len + 4);//取出一块数据,slice第二个参数是索引值
+                var decrypted_data = decipherGCM(data, password);//解密
+                if (decrypted_data === null)
+                    console.log('Decrypto Error!');
+                var md5 = crypto.createHash('md5');
+                var md5_code = md5.update(decrypted_data).digest('hex');
+                console.log(i++, 'decrypted_data', decrypted_data.length, 'md5', md5_code);
+
+                this.push(decrypted_data);//push出去
+                var next_data = currectBuffer.slice(len + 4);//获取剩下的数据
+                currectBuffer = next_data;
+            }
+        }
+        next();
+    },
+    function (cb) { // flush function
+        console.log('flush Function is called!');
+        //this.push('tacking on an extra buffer to the end');
+        cb();
+    });
+
+
 net.connect(6000, '127.0.0.1', function () {
     var server = this;
-    var decryptStream = new DecryptStream();
-    server.pipe(decryptStream).pipe(ws);
+    var decode = new Decode();
+    //var decryptStream = new DecryptStream();
+    server.pipe(decode).pipe(ws);
 });
 
 //rs.pipe(Encodetransform).pipe(ws);

@@ -2,6 +2,7 @@
 const net = require('net');
 const crypto = require('crypto');
 const stream = require('stream');
+const through2 = require('through2');
 
 const password = '123qweASD';
 
@@ -66,9 +67,19 @@ class Encodetransform extends Transform {
 
 var server = net.createServer((clientSocket) => {
     i = 1;
-    var rs = require('fs').createReadStream('./test.jpg')
-    var encode = new Encodetransform()
-    rs.pipe(encode).pipe(clientSocket);
+    var rs = require('fs').createReadStream('./test.png')
+    //var encode = new Encodetransform()
+    rs.pipe(through2(function (chunk, enc, callback) {
+        var encode_buff = encipherGCM(chunk, password);
+        var buff_len = new Buffer(4);
+        buff_len.writeUInt32BE(encode_buff.length);
+        var encode_buff_head = Buffer.concat([buff_len, encode_buff]);
+        var md5 = crypto.createHash('md5');
+        var md5_code = md5.update(chunk).digest('hex');
+        console.log(i++, 'chunk', chunk.length, 'encode_buff_head', encode_buff_head.length, 'md5', md5_code);
+        this.push(encode_buff_head);
+        callback();
+    })).pipe(clientSocket);
 });
 
 
