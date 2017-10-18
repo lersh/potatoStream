@@ -229,8 +229,14 @@ class DecryptStream extends Transform {
         }
         while (currectBuffer.length > 0) {
             //console.log('当前待处理的块大小 %d', currectBuffer.length);
-            var buff_len = currectBuffer.slice(0, 4);
-            var len = buff_len.readUInt32BE(0);
+            var len = 0;
+            if (currectBuffer.length < 4) {
+                console.log('当前待处理的块小于4个字节');
+            }
+            else {
+                var buff_len = currectBuffer.slice(0, 4);
+                len = buff_len.readUInt32BE(0);
+            }
 
             if (currectBuffer.length < len + 4) {//如果当前数据块不完整
                 //console.log('当前数据块不完整，至少应该大于%d \r\n', len + 4);
@@ -244,20 +250,20 @@ class DecryptStream extends Transform {
                 var decrypted_data = decipherGCM(data, password);//解密
                 if (decrypted_data === null)
                     console.log('Decrypto Error!');
+                this.push(decrypted_data);//push出去
+
                 //var md5 = crypto.createHash('md5');
                 //var md5_code = md5.update(decrypted_data).digest('hex');
                 //console.log('%d 解密后数据大小 %d md5 %s', this.i++, decrypted_data.length, md5_code);
 
                 var next_data = currectBuffer.slice(len + 4);//获取剩下的数据
+                currectBuffer = next_data;
                 //console.log('剩下的数据大小 %d \r\n', next_data.length);
                 if (next_data.length === 0) {
                     this._isRemain = false;//没有遗留数据
                     this._remainBuff = new Buffer(0);//上次遗留的数据清0
                     //console.log('剩下的数据大小 %d \r\n', next_data.length);
                 }
-                currectBuffer = next_data;
-                this.push(decrypted_data);//push出去
-
             }
         }
         next();

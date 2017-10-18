@@ -3,5 +3,5 @@
     "server_port": 1999,
     "local_port": 3000,
     "algorithm": "aes-256-cfb",
-    "password": "Synacast123"
+    "password": "1234qwerASDF"
 }

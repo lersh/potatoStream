@@ -101,6 +101,7 @@ const server = socks.createServer(function (client) {
 				logger.error('浏览器断开了连接。');
 				break;
 			default:
+				logger.error('浏览器连接错误。', err);
 		}
 		client.end();
 	});
