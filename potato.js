@@ -192,137 +192,81 @@ Potato.prototype.SymbolPeply = {
 class EncryptStream extends Transform {
     constructor() {
         super();
-        this._MaxLength = 15 * 1024;//分块大小32k;
-        this._num = 0;
+        this.i = 1;
     }
-
     _transform(buf, enc, next) {
-        var buff_goups = [];
-        //将收的的数据分组
-        for (var i = 0, len = buf.length; i < len; i += this._MaxLength) {
-            buff_goups.push(buf.slice(i, i + this._MaxLength));
-        }
-        buff_goups.forEach((buff_item) => {
-            var data_len, body_len, buff_body, num;
-            var data = encipherGCM(buff_item, password);
-            data_len = data.length;
-
-            body_len = new Buffer(2);
-            body_len.writeUInt16BE(data_len);
-
-            num = new Buffer(2);
-            num.writeUInt16BE(this._num);
-
-            buff_body = Buffer.concat([num, body_len, data]);
-            this.push(buff_body);
-
-            this._num++;
-            //console.log(this._num + ' ' + buff_item.length);
-        });
-
-        next();
-
+        var encode_buff = encipherGCM(buf, password);
+        var buff_len = new Buffer(4);
+        buff_len.writeUInt32BE(encode_buff.length);
+        var encode_buff_head = Buffer.concat([buff_len, encode_buff]);
+        var md5 = crypto.createHash('md5');
+        var md5_code = md5.update(buf).digest('hex');
+        console.log(this.i++, 'buf', buf.length, 'encode_buff_head', encode_buff_head.length, 'md5', md5_code);
+        next(null, encode_buff_head);
     }
 }
 
 class DecryptStream extends Transform {
     constructor() {
         super();
-        this.highWaterMark = 2;
         this._isRemain = false;//有没有遗留数据
         this._remainBuff = new Buffer(0);//上次遗留的数据
+        this.i = 1;
     }
 
     _transform(buf, enc, next) {
         var self = this;
         var currectBuffer;
-        console.log(buf.length);
+        //console.log('收到的buf长度 %d', buf.length);
         if (!this._isRemain) {//如果没有待处理数据
             currectBuffer = buf;
+            //console.log('没有遗留数据');
         }
         else {//如果有待处理数据
             this._remainBuff = Buffer.concat([this._remainBuff, buf]);//将待处理数据和这次的数据拼接
             currectBuffer = this._remainBuff;
+            //console.log('有上次遗留的数据，合并后数据大小 %d', currectBuffer.length);
         }
         while (currectBuffer.length > 0) {
+            //console.log('当前待处理的块大小 %d', currectBuffer.length);
             var buff_len = currectBuffer.slice(0, 4);
             var len = buff_len.readUInt32BE(0);
+
             if (currectBuffer.length < len + 4) {//如果当前数据块不完整
+                //console.log('当前数据块不完整，至少应该大于%d \r\n', len + 4);
                 this._isRemain = true;
                 this._remainBuff = currectBuffer;//将这部分数据存入待处理数据
                 currectBuffer = new Buffer(0);
             }
             else {
+                //console.log('当前数据块已经大于等于一个完整块');
                 var data = currectBuffer.slice(4, len + 4);//取出一块数据,slice第二个参数是索引值
                 var decrypted_data = decipherGCM(data, password);//解密
                 if (decrypted_data === null)
                     console.log('Decrypto Error!');
-                this.push(decrypted_data);//push出去
+                var md5 = crypto.createHash('md5');
+                var md5_code = md5.update(decrypted_data).digest('hex');
+                console.log('%d 解密后数据大小 %d md5 %s', this.i++, decrypted_data.length, md5_code);
+
                 var next_data = currectBuffer.slice(len + 4);//获取剩下的数据
+                //console.log('剩下的数据大小 %d \r\n', next_data.length);
+                if (next_data.length === 0) {
+                    this._isRemain = false;//没有遗留数据
+                    this._remainBuff = new Buffer(0);//上次遗留的数据清0
+                    console.log('剩下的数据大小 %d \r\n', next_data.length);
+                }
                 currectBuffer = next_data;
+                this.push(decrypted_data);//push出去
+
             }
         }
         next();
     }
 }
 
-class EncodeStream extends Transform {
-    constructor() {
-        super();
-        this._xor = 66;
-        this._cipher = crypto.createCipher(algorithm, password);
-    }
-
-    _transform(chunk, enc, next) {
-
-        var buff = encipherGCM(chunk, password);//this._cipher.update(chunk);
-        console.log(chunk.length + '  ' + buff.length);
-        this.push(buff);
-        next();
-
-    }
-    _flush(callback) {
-        try {
-            //this.push(this._cipher.final());
-        } catch (e) {
-            callback(e);
-            return;
-        }
-        callback();
-    }
-}
-
-class DecodeStream extends Transform {
-    constructor() {
-        super();
-        this._xor = 66;
-        this._decipher = crypto.createDecipher(algorithm, password);
-    }
-
-    _transform(chunk, enc, next) {
-
-        var buff = decipherGCM(chunk, password);//this._decipher.update(chunk);
-        if (buff == null)
-            next(false);
-        console.log(chunk.length + '  ' + buff.length);
-        this.push(buff);
-        next();
-
-    }
-    _flush(callback) {
-        try {
-            //this.push(this._decipher.final());
-        } catch (e) {
-            callback(e);
-            return;
-        }
-        callback();
-    }
-}
 
 Potato.prototype.EncryptStream = EncryptStream;
 Potato.prototype.DecryptStream = DecryptStream;
-Potato.prototype.EncodeStream = EncodeStream;
-Potato.prototype.DecodeStream = DecodeStream;
+
 
 module.exports = Potato;

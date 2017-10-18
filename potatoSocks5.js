@@ -3,7 +3,7 @@ const socks = require('socks-proxy');
 const net = require('net');
 const crypto = require('crypto');
 const fs = require('fs');
-const zlib = require('zlib');
+
 //log4js module
 var log4js = require('log4js');
 var logConfig = require('./logConfig.json');
@@ -27,8 +27,7 @@ if (config.password != null)
 Potato = new Potato(algorithm, password);
 var EncryptStream = Potato.EncryptStream;
 var DecryptStream = Potato.DecryptStream;
-var EncodeStream = Potato.EncodeStream;
-var DecodeStream = Potato.DecodeStream;
+
 
 //potato服务器地址
 var
@@ -69,15 +68,11 @@ const server = socks.createServer(function (client) {
 			logger.trace(reply);
 
 			client.reply(reply.sig);//将状态发给浏览器
-			logger.trace('收到的信号：%d，目标地址： %s:%d', reply.sig, address.address, address.port);
+			logger.trace('收到的信号：%d，目标地址： %s:%d', reply.sig, address.address, address.port);//浏览器收到连通的信号就会开始发送真正的请求数据
 			//var cipher = crypto.createCipher(algorithm, password),
 			//	decipher = crypto.createDecipher(algorithm, password);
-			var cipher = crypto.createCipher(algorithm, password);
-			var decipher = crypto.createDecipher(algorithm, password);
-			//浏览器收到连通的信号就会开始发送真正的请求数据
-			decipher.on('drain', () => {
-				console.log('drain on fire!');
-			})
+			var cipher = new Potato.EncryptStream(),
+				decipher = new Potato.DecryptStream();
 			client//浏览器的socket
 				.pipe(cipher)//加密
 				.pipe(potatoSocket)//传给远程代理服务器
