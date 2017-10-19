@@ -17,3 +17,6 @@
     "password": "password"//密码，需要保持两端一致
 }
 ```
+5. 然后在服务器上运行 node potatoServer.js 如果想后台运行，执行 node potatoServer.js &
+6. 本地运行 node potatoSocks5.js 即可在你指定的端口开启socks5代理
+7. 浏览器里设置socks5代理服务器，就可以安心的浏览了~
