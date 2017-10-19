@@ -1,7 +1,7 @@
 # potatoStream
 使用Nodejs实现的代理服务器，使用AES-256-GCM加密。后继计划会添加obfs混淆。
 
-目前还在试验阶段，请谨慎使用。
+目前还在试验阶段，请谨慎使用。需要在服务器和本地安装[Node.js](https://nodejs.org/)
 
 1. potatoServer.js是服务器。
 2. potatoSocks.js是本地的socks5代理服务器。
