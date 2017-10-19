@@ -54,7 +54,7 @@ const server = socks.createServer(function (client) {
 	var address = client.address;
 	logger.trace('浏览器想要连接： %s:%d', address.address, address.port);
 
-	net.connect(potatoPort, potatoAddr, function () {//连接远程代理服务器
+	var potatoServer = net.connect(potatoPort, potatoAddr, function () {//连接远程代理服务器
 		var potatoSocket = this;//potato服务器的连接
 
 		logger.trace('连上了potato服务器');
@@ -103,6 +103,10 @@ const server = socks.createServer(function (client) {
 			default:
 				logger.error('浏览器连接错误。', err);
 		}
+		client.end();
+	});
+	potatoServer.on('error', (err) => {
+		logger.error('potato服务器错误：%s\r\n%s', err.code, err.message);
 		client.end();
 	});
 });

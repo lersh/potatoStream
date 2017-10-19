@@ -6,8 +6,7 @@
   "dependencies": {
     "binary": "^0.3.0",
     "log4js": "^2.3.4",
-    "socks-proxy": "^1.0.0",
-    "through2": "^2.0.3"
+    "socks-proxy": "^1.0.0"
   },
   "devDependencies": {},
   "scripts": {

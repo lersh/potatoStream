@@ -2,7 +2,6 @@
 const Transform = require('stream').Transform;
 const binary = require('binary');
 const crypto = require('crypto');
-const LazyTransform = require('stream').LazyTransform;
 
 var algorithm, password;
 
@@ -72,6 +71,7 @@ function decipherGCM(data, masterkey) {
         return decrypted;
 
     } catch (e) {
+        console.log('解码错误！请检查密码是否正确！');
     }
 
     // error
@@ -248,7 +248,7 @@ class DecryptStream extends Transform {
                 //console.log('当前数据块已经大于等于一个完整块');
                 var data = currectBuffer.slice(4, len + 4);//取出一块数据,slice第二个参数是索引值
                 var decrypted_data = decipherGCM(data, password);//解密
-                if (decrypted_data === null)
+                if (decrypted_data == null)
                     console.log('Decrypto Error!');
                 this.push(decrypted_data);//push出去
 
