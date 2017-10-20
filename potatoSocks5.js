@@ -94,7 +94,7 @@ const server = socks.createServer(function (client) {
 	});
 
 	client.on('error', (err) => {
-		logger.error('浏览器端连接错误：%s\r\n%s', err.code, err.message);
+		//logger.error('浏览器端连接错误：%s\r\n%s', err.code, err.message);
 		switch (err.code) {
 			case 'EPIPE':
 			case 'ECONNRESET':
@@ -103,6 +103,7 @@ const server = socks.createServer(function (client) {
 			default:
 				logger.error('浏览器连接错误。', err);
 		}
+		potatoSocket.end();
 		client.end();
 	});
 	potatoServer.on('error', (err) => {
