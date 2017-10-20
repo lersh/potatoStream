@@ -4,6 +4,7 @@ const crypto = require('crypto');
 const stream = require('stream');
 const fs = require('fs');
 const URL = require('url');
+const Transform = require('stream').Transform;
 
 class ObfsRequest extends Transform {
     constructor() {
@@ -13,8 +14,8 @@ class ObfsRequest extends Transform {
     _transform(buf, enc, next) {
         var buffer;
         if (this._isFirst) {
-            var fakeHead = fakeHead.Request();
-            buffer = Buffer.concat([fakeHead, buf]);
+            var fake = Buffer.from(fakeHead.Request());
+            buffer = Buffer.concat([fake, buf]);
             this._isFirst = false;
         }
         else {
@@ -75,18 +76,16 @@ Cookie: ${cookie}\r\n\r\n`;
     },
     Response: function () {
         var time = new Date().toGMTString();
-        var fakeHead = ` HTTP/1.1 200 OK
-Server: nginx
-Date: ${time}
-Content-Type: application/x-bittorrent
-Transfer-Encoding: chunked
-Connection: keep-alive
-Last-Modified: ${time}
-Vary: Accept-Encoding
-Cache-Control: no-cache, no-store, must-revalidate
-Accept-Ranges: bytes
-        
-`;
+        var fakeHead = ` HTTP/1.1 200 OK\r\n\
+Server: nginx\r\n\
+Date: ${time}\r\n\
+Content-Type: application/x-bittorrent\r\n\
+Transfer-Encoding: chunked\r\n\
+Connection: keep-alive\r\n\
+Last-Modified: ${time}\r\n\
+Vary: Accept-Encoding\r\n\
+Cache-Control: no-cache, no-store, must-revalidate\r\n\
+Accept-Ranges: bytes\r\n\r\n`;
         return fakeHead;
     }
 
@@ -95,5 +94,5 @@ Accept-Ranges: bytes
 var encode = new ObfsRequest();
 var decode = new ObfsRequestResolve();
 var ws = fs.createWriteStream('./test.txt');
-process.stdin.pipe(encode).pipe(ws);
+process.stdin.pipe(encode).pipe(decode).pipe(ws);
 process.stdin.resume();
