@@ -103,7 +103,7 @@ const server = socks.createServer(function (client) {
 			default:
 				logger.error('浏览器连接错误。', err);
 		}
-		potatoSocket.end();
+		potatoServer.end();
 		client.end();
 	});
 	potatoServer.on('error', (err) => {
