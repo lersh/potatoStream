@@ -8,7 +8,7 @@ const fs = require('fs');
 var log4js = require('log4js');
 var logConfig = require('./logConfig.json');
 log4js.configure(logConfig);
-var logger = log4js.getLogger('server');
+var logger = log4js.getLogger('client');
 //读取配置文件
 var config = require('./config.json');
 
