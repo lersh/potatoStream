@@ -135,10 +135,11 @@ potatoServer.on('secureConnection', (pototaClient) => {
 });
 
 //新建会话时保存会话
-potatoServer.on('newSession', (id, data) => {
+potatoServer.on('newSession', (id, data, cb) => {
     tlsSessionStore[id] = data;
     logger.trace('新会话连接，id: %s\r\n', id);
     logger.trace(tlsSessionStore);
+    cb();
 });
 //回复会话
 potatoServer.on('resumeSession', (id, cb) => {
