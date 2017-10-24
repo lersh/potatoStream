@@ -26,6 +26,11 @@ Potato = new Potato(algorithm, password);
 var server_port = 1999;
 if (config.server_port != null)
     server_port = config.server_port;
+//命令行参数优先级大于配置文件
+if (process.argv.length == 3) {
+    server_port = +process.argv[2];
+}
+
 
 var ciphers = [
     'ECDHE-RSA-AES256-GCM-SHA384',
@@ -74,7 +79,7 @@ potatoServer.on('secureConnection', (pototaClient) => {
                 logger.trace('connected %s:%d\r\n', this.remoteAddress, this.remotePort);
                 sig = Potato.SymbolPeply.Create(Potato.ReplyCode.SUCCEEDED);//创建一个成功信号
                 pototaClient.write(sig);//如果连上了就发送成功信号                
-  
+
                 pototaClient
                     .pipe(this)//将客户端发来的数据传给目标服务器
                     .pipe(pototaClient);//将目标服务器返回的数据传给potato客户端
