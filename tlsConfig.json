@@ -1,0 +1,42 @@
+{
+    "appenders": {
+        "out": {
+            "type": "console"
+        },
+        "client": {
+            "type": "file",
+            "filename": "./tlsClient.log",
+            "maxLogSize": 104800,
+            "numBackups": 100
+        },
+        "server": {
+            "type": "file",
+            "filename": "./tlsServer.log",
+            "maxLogSize": 104800,
+            "numBackups": 100
+        }
+    },
+    "categories": {
+        "default": {
+            "appenders": [
+                "out"
+            ],
+            "level": "all"
+        },
+        "server": {
+            "appenders": [
+                "out",
+                "server"
+            ],
+            "level": "trace"
+        },
+        "client": {
+            "appenders": [
+                "out",
+                "client"
+            ],
+            "level": "trace"
+        }
+    },
+    "replaceConsole": true
+}
