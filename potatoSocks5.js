@@ -12,6 +12,9 @@ var logger = log4js.getLogger('client');
 //读取配置文件
 var config = require('./config.json');
 
+//导入混淆库
+const Obfs = require('./obfs');
+
 //初始化potato函数库
 var Potato = require('./potato');
 var
@@ -73,9 +76,13 @@ const server = socks.createServer(function (client) {
 			//	decipher = crypto.createDecipher(algorithm, password);
 			var cipher = new Potato.EncryptStream(),
 				decipher = new Potato.DecryptStream();
+			var obfs = new Obfs.ObfsRequest(),
+				deobfs = new Obfs.ObfsResolve();
 			client//浏览器的socket
 				.pipe(cipher)//加密
+				.pipe(obfs)//混淆，伪装成HTTP的提交数据
 				.pipe(potatoSocket)//传给远程代理服务器
+				.pipe(deobfs)//反混淆服务器传回来的数据
 				.pipe(decipher)//将返回的数据解密
 				.pipe(client);//远程代理服务器的数据再回传给浏览器
 		});

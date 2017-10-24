@@ -2,7 +2,6 @@
 const net = require('net');
 const crypto = require('crypto');
 const domain = require('domain');
-const zlib = require('zlib');
 //log4js module
 var log4js = require('log4js');
 var logConfig = require('./logConfig.json');
@@ -10,6 +9,9 @@ log4js.configure(logConfig);
 var logger = log4js.getLogger('server');
 //读取配置文件
 var config = require('./config.json');
+
+//导入混淆库
+const Obfs = require('./obfs');
 
 //初始化potato函数库
 var Potato = require('./potato');
@@ -63,10 +65,14 @@ var potatoServer = net.createServer((pototaClient) => {
                 //    decipher = crypto.createDecipher(algorithm, password);
                 var cipher = new Potato.EncryptStream(),
                     decipher = new Potato.DecryptStream();
+                var obfs = new Obfs.ObfsResponse(),
+                    deobfs = new Obfs.ObfsResolve();
                 pototaClient
+                    .pipe(deobfs)//将potato客户端的数据反混淆
                     .pipe(decipher)//将potato客户端的数据解密
                     .pipe(this)//传给目标服务器
                     .pipe(cipher)//将目标服务器返回的数据加密
+                    .pipe(obfs)//将加密后的数据混淆
                     .pipe(pototaClient);//传给potato客户端
             });
 
