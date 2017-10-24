@@ -6,7 +6,7 @@ const fs = require('fs');
 
 //log4js module
 var log4js = require('log4js');
-var logConfig = require('./logConfig.json');
+var logConfig = require('./tlsConfig.json');
 log4js.configure(logConfig);
 var logger = log4js.getLogger('client');
 //读取配置文件
