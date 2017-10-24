@@ -48,6 +48,8 @@ var options = {
     ca: [fs.readFileSync('./client/client-cert.pem')]
 }
 
+//会话重用的存储
+var tlsSessionStore = {};
 var potatoServer = tls.createServer(options);//建立tls服务器开始监听
 
 potatoServer.on('secureConnection', (pototaClient) => {
@@ -130,6 +132,15 @@ potatoServer.on('secureConnection', (pototaClient) => {
         logger.error('potato客户端可能已经退出或崩溃。\r\n');
     })
 
+});
+
+//新建会话时保存会话
+potatoServer.on('newSession', (id, data) => {
+    tlsSessionStore[id] = data;
+});
+//回复会话
+potatoServer.on('resumeSession', (id, cb) => {
+    cb(null, tlsSessionStore[id] || null);
 });
 
 
