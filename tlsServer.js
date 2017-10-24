@@ -52,6 +52,19 @@ var options = {
 var tlsSessionStore = {};
 var potatoServer = tls.createServer(options);//建立tls服务器开始监听
 
+//新建会话时保存会话
+potatoServer.on('newSession', (id, data, cb) => {
+    tlsSessionStore[id] = data;
+    logger.trace('新会话连接，id: %s\r\n', id);
+    logger.trace(tlsSessionStore);
+    cb();
+});
+//回复会话
+potatoServer.on('resumeSession', (id, cb) => {
+    cb(null, tlsSessionStore[id] || null);
+    logger.trace('回复会话，id: %s\r\n', id);
+});
+
 potatoServer.on('secureConnection', (pototaClient) => {
     var potatoAddr = pototaClient.remoteAddress;
     var potatoPort = pototaClient.remotePort;
@@ -133,20 +146,6 @@ potatoServer.on('secureConnection', (pototaClient) => {
     })
 
 });
-
-//新建会话时保存会话
-potatoServer.on('newSession', (id, data, cb) => {
-    tlsSessionStore[id] = data;
-    logger.trace('新会话连接，id: %s\r\n', id);
-    logger.trace(tlsSessionStore);
-    cb();
-});
-//回复会话
-potatoServer.on('resumeSession', (id, cb) => {
-    cb(null, tlsSessionStore[id] || null);
-    logger.trace('回复会话，id: %s\r\n', id);
-});
-
 
 potatoServer.listen(server_port, () => {
     logger.info('listening on ' + server_port);
