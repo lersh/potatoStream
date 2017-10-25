@@ -3,6 +3,7 @@
 
 目前还在试验阶段，请谨慎使用。需要在服务器和本地安装[Node.js](https://nodejs.org/)
 
+
 1. potatoServer.js是服务器。
 2. potatoSocks.js是本地的socks5代理服务器。
 3. 使用git clone到本地后，请先执行npm install来安装依赖组件
@@ -20,3 +21,9 @@
 5. 然后在服务器上运行 node potatoServer.js 如果想后台运行，执行 node potatoServer.js &
 6. 本地运行 node potatoSocks5.js 即可在你指定的端口开启socks5代理
 7. 浏览器里设置socks5代理服务器，就可以安心的浏览了~
+
+增加了一个pipe.js，用于中转流量，常见于部分公司网络屏蔽所有国外ip，这时你可以找一台国内的服务器，用pipe.js来中转流量。pipe.js不关心具体的协议无论是http还是https，还是shadowsocks(R)，只要是tcp连接都可以中转。
+- 用法
+    > node pipe.js 国外服务器ip 国外服务器端口 本地端口
+    > 比如 node pipe.js 45.190.*.* 443 1080
+    > 这样只要连接你这台机器的1080端口，就能转发到45.190.*.*的443端口上了
