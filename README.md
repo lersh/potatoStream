@@ -22,6 +22,7 @@
 6. 本地运行 node potatoSocks5.js 即可在你指定的端口开启socks5代理
 7. 浏览器里设置socks5代理服务器，就可以安心的浏览了~
 
+---
 增加了一个pipe.js，用于中转流量，常见于部分公司网络屏蔽所有国外ip，这时你可以找一台国内的服务器，用pipe.js来中转流量。pipe.js不关心具体的协议无论是http还是https，还是shadowsocks(R)，只要是tcp连接都可以中转。
 
 - 用法
