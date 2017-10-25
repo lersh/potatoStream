@@ -25,5 +25,10 @@ var pipeServer = net.createServer((pipeClient) => {
 });
 
 pipeServer.listen(localPort, () => {
-    console.log('Listening on ', localPort);
+    console.log('Listening on', localPort);
+});
+
+process.on('uncaughtException', function (err) {
+    console.log("捕获未处理的错误: " + err.message);
+    console.log(err);
 });
