@@ -28,14 +28,14 @@
                 "out",
                 "server"
             ],
-            "level": "trace"
+            "level": "info"
         },
         "client": {
             "appenders": [
                 "out",
                 "client"
             ],
-            "level": "trace"
+            "level": "info"
         }
     },
     "replaceConsole": true
