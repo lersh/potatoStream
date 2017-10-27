@@ -51,16 +51,11 @@ if (process.argv.length == 5) {
 var options = {
     port: potatoPort,
     host: potatoAddr,
-    key: fs.readFileSync('./client/client-key.pem'),
-    cert: fs.readFileSync('./client/client-cert.pem'),
-
-    // 服务端使用的自签名证书认证
-    ca: [fs.readFileSync('./server/server-cert.pem')],
+	rejectUnauthorized: false,//因为服务器是自签名证书，不能拒绝连接
     checkServerIdentity: function (host, cert) {
         return undefined;
     }
 };
-
 
 const server = socks.createServer(function (client) {
 	var address = client.address;

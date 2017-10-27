@@ -38,14 +38,13 @@ var ciphers = [
     .join(':');
 
 var options = {
-    key: fs.readFileSync('./server/server-key.pem'),
-    cert: fs.readFileSync('./server/server-cert.pem'),
+    key: fs.readFileSync('./cert/server.key'),
+    cert: fs.readFileSync('./cert/server.crt'),
     ciphers: ciphers,
+    passphrase: password,
     secureProtocol: 'TLSv1_2_method',
     honorCipherOrder: true,
-    requestCert: true,
-    rejectUnauthorized: true,
-    ca: [fs.readFileSync('./client/client-cert.pem')]
+    rejectUnauthorized: true
 }
 
 //会话重用的存储
