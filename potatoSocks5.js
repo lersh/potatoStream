@@ -1,8 +1,11 @@
 'use strict';
 const socks = require('socks-proxy');
 const net = require('net');
+const tls = require('tls');
 const crypto = require('crypto');
 const fs = require('fs');
+const PotatoLib = require('./potato');
+const Obfs = require('./obfs');
 
 //log4js module
 var log4js = require('log4js');
@@ -12,11 +15,6 @@ var logger = log4js.getLogger('client');
 //读取配置文件
 var config = require('./config.json');
 
-//导入混淆库
-const Obfs = require('./obfs');
-
-//初始化potato函数库
-var Potato = require('./potato');
 var
 	algorithm = 'aes-256-cfb',
 	password = '';
@@ -27,7 +25,7 @@ if (config.algorithm != null)
 if (config.password != null)
 	password = config.password;
 
-Potato = new Potato(algorithm, password);
+var Potato = new PotatoLib(algorithm, password);
 var EncryptStream = Potato.EncryptStream;
 var DecryptStream = Potato.DecryptStream;
 
@@ -51,57 +49,43 @@ if (process.argv.length == 5) {
 	local_port = +process.argv[4];
 }
 
-
+var options = {};
+if (config.method === 'https') {
+	//使用客户端私钥和证书创建服务器
+	options = {
+		port: potatoPort,
+		host: potatoAddr,
+		rejectUnauthorized: false,//因为服务器是自签名证书，不能拒绝连接
+		checkServerIdentity: function (host, cert) {
+			return undefined;
+		}
+	}
+}
+else {
+	options = {
+		port: potatoPort,
+		host: potatoAddr
+	}
+}
 
 const server = socks.createServer(function (client) {
 	var address = client.address;
 	logger.trace('浏览器想要连接： %s:%d', address.address, address.port);
 
-	var potatoServer = net.connect(potatoPort, potatoAddr, function () {//连接远程代理服务器
-		var potatoSocket = this;//potato服务器的连接
+	var potatoServer;
 
-		logger.trace('连上了potato服务器');
-		//构造一个信令告诉potato服务器要连接的目标地址
-		var req = Potato.SymbolRequest.Create(address.address, address.port);  //Potato.CreateHead.ConnectRequest(address.address, address.port);
-		potatoSocket.write(req);//将信令发给potato服务器
-		logger.trace('发送连接信令  %s:%d', potatoSocket.remoteAddress, potatoSocket.remotePort);
-
-		potatoSocket.once('data', (data) => {//第一次收到回复时
-			var reply = Potato.SymbolPeply.Resolve(data);//解析返回的信号
-			logger.trace(reply);
-
-			client.reply(reply.sig);//将状态发给浏览器
-			logger.trace('收到的信号：%d，目标地址： %s:%d', reply.sig, address.address, address.port);//浏览器收到连通的信号就会开始发送真正的请求数据
-			//var cipher = crypto.createCipher(algorithm, password),
-			//	decipher = crypto.createDecipher(algorithm, password);
-			var cipher = new Potato.EncryptStream(),
-				decipher = new Potato.DecryptStream();
-			var obfs = new Obfs.ObfsRequest(),
-				deobfs = new Obfs.ObfsResolve();
-			client//浏览器的socket
-				.pipe(cipher)//加密
-				.pipe(obfs)//混淆，伪装成HTTP的提交数据
-				.pipe(potatoSocket)//传给远程代理服务器
-				.pipe(deobfs)//反混淆服务器传回来的数据
-				.pipe(decipher)//将返回的数据解密
-				.pipe(client);//远程代理服务器的数据再回传给浏览器
+	if (config.method === 'https') {
+		potatoServer = tls.connect(options, () => {
+			doProxy(this, address.address, address.port);
 		});
-
-		potatoSocket.on('error', (err) => {
-			logger.error('potato服务器错误：%s\r\n%s', err.code, err.message);
-			switch (err.code) {
-				case 'ECONNRESET':
-					logger.error('potato服务器断开了连接。%s:%d', address.address, address.port);
-					client.end();//断开浏览器连接
-					potatoSocket.end();//断开和服务器的连接
-					break;
-				default:
-			}
+	}
+	else {
+		potatoServer = net.connect(options, () => {
+			doProxy(this, address.address, address.port);
 		});
-	});
+	}
 
 	client.on('error', (err) => {
-		//logger.error('浏览器端连接错误：%s\r\n%s', err.code, err.message);
 		switch (err.code) {
 			case 'EPIPE':
 			case 'ECONNRESET':
@@ -139,3 +123,52 @@ process.on('uncaughtException', function (err) {
 
 
 });
+
+
+function doProxy(potatoSocket, address, port, needCipher) {
+	logger.trace('连上了potato服务器');
+	//构造一个信令告诉potato服务器要连接的目标地址
+	var req = Potato.SymbolRequest.Create(address, port);
+	potatoSocket.write(req);//将信令发给potato服务器
+	logger.trace('发送连接信令  %s:%d', potatoSocket.remoteAddress, potatoSocket.remotePort);
+
+	potatoSocket.once('data', (data) => {//第一次收到回复时
+		var reply = Potato.SymbolPeply.Resolve(data);//解析返回的信号
+		logger.trace(reply);
+
+		client.reply(reply.sig);//将状态发给浏览器
+		logger.trace('收到的信号：%d，目标地址： %s:%d', reply.sig, address, port);//浏览器收到连通的信号就会开始发送真正的请求数据
+
+		if (needCipher) {
+			var cipher = new Potato.EncryptStream(),
+				decipher = new Potato.DecryptStream();
+			var obfs = new Obfs.ObfsRequest(),
+				deobfs = new Obfs.ObfsResolve();
+
+			client//浏览器的socket
+				.pipe(cipher)//加密
+				.pipe(obfs)//混淆，伪装成HTTP的提交数据
+				.pipe(potatoSocket)//传给远程代理服务器
+				.pipe(deobfs)//反混淆服务器传回来的数据
+				.pipe(decipher)//将返回的数据解密
+				.pipe(client);//远程代理服务器的数据再回传给浏览器
+		}
+		else {
+			client//浏览器的socket
+				.pipe(potatoSocket)//传给远程代理服务器
+				.pipe(client);//远程代理服务器的数据再回传给浏览器
+		}
+	});
+
+	potatoSocket.on('error', (err) => {
+		logger.error('potato服务器错误：%s\r\n%s', err.code, err.message);
+		switch (err.code) {
+			case 'ECONNRESET':
+				logger.error('potato服务器断开了连接。%s:%d', address, port);
+				client.end();//断开浏览器连接
+				potatoSocket.end();//断开和服务器的连接
+				break;
+			default:
+		}
+	});
+}
