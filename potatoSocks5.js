@@ -4,8 +4,8 @@ const net = require('net');
 const tls = require('tls');
 const crypto = require('crypto');
 const fs = require('fs');
-const PotatoLib = require('./potato');
-const Obfs = require('./obfs');
+const PotatoLib = require('./lib/potato');
+const Obfs = require('./lib/obfs');
 
 //log4js module
 var log4js = require('log4js');
