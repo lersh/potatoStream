@@ -2,6 +2,7 @@
 const net = require('net');
 const tls = require('tls');
 const crypto = require('crypto');
+const fs = require('fs');
 const domain = require('domain');
 const PotatoLib = require('./potato');
 const Obfs = require('./obfs');
