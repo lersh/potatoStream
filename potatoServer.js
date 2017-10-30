@@ -99,16 +99,23 @@ function onConnect(potatoClient, needCipher) {
 
     potatoClient.once('data', (data) => {
         var sig;//返回信号
+        var errSig = false;//错误标志
 
         var reqSymbol = Potato.SymbolRequest.Resolve(data);  //解析请求头
-        logger.trace('want to connect %s:%d\r\n', reqSymbol.dst.addr, reqSymbol.dst.port);
-        if (reqSymbol === null) {//连接信令错误
+        if (reqSymbol === null) {//连接信令错误，有可能是GFW的探测链接
             logger.error('请求信令错误！来自：%s:%d', potatoAddr, potatoPort);
-            sig = Potato.SymbolPeply.Create(Potato.ReplyCode.COMMAND_NOT_SUPPORTED);//创建一个错误信号
-            potatoClient.write(sig);//返回错误信号
-            potatoClient.end();
-            potatoClient.destroy();
-            return;
+            //sig = Potato.SymbolPeply.Create(Potato.ReplyCode.COMMAND_NOT_SUPPORTED);//创建一个错误信号
+            //potatoClient.write(sig);//返回错误信号
+            //potatoClient.end();
+            //potatoClient.destroy();
+            //return;
+            reqSymbol = {};
+            reqSymbol.dst.addr = 'www.aliyun.com';
+            reqSymbol.dst.port = 443;
+            errSig = true;
+        }
+        else {
+            logger.trace('want to connect %s:%d\r\n', reqSymbol.dst.addr, reqSymbol.dst.port);
         }
 
         var d = domain.create();//用来捕捉错误信号的域
@@ -120,7 +127,12 @@ function onConnect(potatoClient, needCipher) {
             proxySocket.on('connect', function () {
                 logger.trace('connected %s:%d\r\n', this.remoteAddress, this.remotePort);
                 sig = Potato.SymbolPeply.Create(Potato.ReplyCode.SUCCEEDED);//创建一个成功信号
-                potatoClient.write(sig);//如果连上了就发送成功信号                
+                potatoClient.write(sig);//如果连上了就发送成功信号  
+
+                if (errSig) {
+                    this.pipe(potatoClient);
+                    return;
+                }
 
                 if (needCipher) {
                     var cipher = new Potato.EncryptStream(),
@@ -172,7 +184,7 @@ function onConnect(potatoClient, needCipher) {
             });
         });
 
-        //捕捉错误信号
+        //捕捉域里的错误
         d.on('error', (err) => {
             logger.error('域里未处理的错误:' + err.message + err.stack);
             sig = Potato.SymbolPeply.Create(Potato.ReplyCode.GENERAL_FAILURE);

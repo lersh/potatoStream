@@ -14,6 +14,7 @@
     "server_addr": "127.0.0.1",//服务器地址
     "server_port": 1999,//服务器的端口
     "local_port": 3000,//本地socks5代理服务器的端口
+    "method": "https",//使用本地加密还是https方式加密，如果是http则模拟http方式，https的使用自签名的tls方式来加密传输
     "algorithm": "aes-256-cfb",//加密算法，暂时无用。强制使用AES-256-CM
     "password": "password"//密码，需要保持两端一致
 }
