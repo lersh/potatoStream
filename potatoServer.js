@@ -68,11 +68,15 @@ if (config.method === 'https') {
         cb(null, tlsSessionStore[id] || null);
         logger.trace('回复会话，id: %s\r\n', id);
     });
-    potatoServer.on('secureConnection', (potatoClient) => { onConnect(potatoClient) });
+    potatoServer.on('secureConnection', (potatoClient) => {
+        onConnect(potatoClient, false)
+    });
 }
 else {
     potatoServer = net.createServer(options);
-    potatoServer.on('connection', (potatoClient) => { onConnect(potatoClient) });
+    potatoServer.on('connection', (potatoClient) => {
+        onConnect(potatoClient, true)
+    });
 }
 
 
@@ -88,11 +92,11 @@ process.on('uncaughtException', function (err) {
 
 
 function onConnect(potatoClient, needCipher) {
-    var potatoAddr = pototaClient.remoteAddress;
-    var potatoPort = pototaClient.remotePort;
+    var potatoAddr = potatoClient.remoteAddress;
+    var potatoPort = potatoClient.remotePort;
     logger.trace('客户端连进来了： %s:%d\r\n', potatoAddr, potatoPort);
 
-    pototaClient.once('data', (data) => {
+    potatoClient.once('data', (data) => {
         var sig;//返回信号
 
         var reqSymbol = Potato.SymbolRequest.Resolve(data);  //解析请求头
@@ -100,9 +104,9 @@ function onConnect(potatoClient, needCipher) {
         if (reqSymbol === null) {//连接信令错误
             logger.error('请求信令错误！来自：%s:%d', potatoAddr, potatoPort);
             sig = Potato.SymbolPeply.Create(Potato.ReplyCode.COMMAND_NOT_SUPPORTED);//创建一个错误信号
-            pototaClient.write(sig);//返回错误信号
-            pototaClient.end();
-            pototaClient.destroy();
+            potatoClient.write(sig);//返回错误信号
+            potatoClient.end();
+            potatoClient.destroy();
             return;
         }
 
@@ -115,25 +119,25 @@ function onConnect(potatoClient, needCipher) {
             proxySocket.on('connect', function () {
                 logger.trace('connected %s:%d\r\n', this.remoteAddress, this.remotePort);
                 sig = Potato.SymbolPeply.Create(Potato.ReplyCode.SUCCEEDED);//创建一个成功信号
-                pototaClient.write(sig);//如果连上了就发送成功信号                
+                potatoClient.write(sig);//如果连上了就发送成功信号                
 
                 if (needCipher) {
                     var cipher = new Potato.EncryptStream(),
                         decipher = new Potato.DecryptStream();
                     var obfs = new Obfs.ObfsResponse(),
                         deobfs = new Obfs.ObfsResolve();
-                    pototaClient
+                    potatoClient
                         .pipe(deobfs)//将potato客户端的数据反混淆
                         .pipe(decipher)//将potato客户端的数据解密
                         .pipe(this)//传给目标服务器
                         .pipe(cipher)//将目标服务器返回的数据加密
                         .pipe(obfs)//将加密后的数据混淆
-                        .pipe(pototaClient);//传给potato客户端
+                        .pipe(potatoClient);//传给potato客户端
                 }
                 else {
-                    pototaClient
+                    potatoClient
                         .pipe(this)//将potato客户端的数据传给目标服务器
-                        .pipe(pototaClient);//将目标服务器返回的数据传给potato客户端
+                        .pipe(potatoClient);//将目标服务器返回的数据传给potato客户端
                 }
             });
 
@@ -142,25 +146,25 @@ function onConnect(potatoClient, needCipher) {
                     case 'ENOTFOUND':
                         logger.info('找不到域名: %s', reqSymbol.addr);
                         sig = Potato.SymbolPeply.Create(Potato.ReplyCode.HOST_UNREACHABLE);
-                        pototaClient.write(sig);
+                        potatoClient.write(sig);
                         break;
                     case 'ECONNREFUSED':
                         logger.info('连接被拒绝: %s:%d', reqSymbol.addr, reqSymbol.port);
                         sig = Potato.SymbolPeply.Create(Potato.ReplyCode.CONNECTION_REFUSED);
-                        pototaClient.write(sig);
+                        potatoClient.write(sig);
                         break;
                     case 'ETIMEDOUT':
                         logger.info('连接超时: %s:%d', reqSymbol.addr, reqSymbol.port);
                         sig = Potato.SymbolPeply.Create(Potato.ReplyCode.NETWORK_UNREACHABLE);
-                        if (pototaClient.writable)
-                            pototaClient.write(sig);
+                        if (potatoClient.writable)
+                            potatoClient.write(sig);
                         break;
                     case 'ECONNRESET':
                     default:
                         logger.error("远程服务器连接错误: %s:%d", reqSymbol.dst.addr, reqSymbol.dst.port);
                         logger.error(err.code + '\t' + err.message);
                         proxySocket.end();//断开远程服务器的连接
-                        pototaClient.end();//断开和potato客户端的连接
+                        potatoClient.end();//断开和potato客户端的连接
                         break;
                 }
 
@@ -171,13 +175,13 @@ function onConnect(potatoClient, needCipher) {
         d.on('error', (err) => {
             logger.error('域里未处理的错误:' + err.message + err.stack);
             sig = Potato.SymbolPeply.Create(Potato.ReplyCode.GENERAL_FAILURE);
-            if (pototaClient.writable)
-                pototaClient.write(sig);
+            if (potatoClient.writable)
+                potatoClient.write(sig);
 
         });
 
     });
-    pototaClient.on('error', (err) => {
+    potatoClient.on('error', (err) => {
         logger.error("potato客户端错误: %s:%d  ", potatoAddr, potatoPort, err);
         logger.error('potato客户端可能已经退出或崩溃。\r\n');
     })

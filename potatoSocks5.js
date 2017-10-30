@@ -75,13 +75,13 @@ const server = socks.createServer(function (client) {
 	var potatoServer;
 
 	if (config.method === 'https') {
-		potatoServer = tls.connect(options, () => {
-			doProxy(this, address.address, address.port);
+		potatoServer = tls.connect(options, function () {
+			doProxy(this, client, false);
 		});
 	}
 	else {
-		potatoServer = net.connect(options, () => {
-			doProxy(this, address.address, address.port);
+		potatoServer = net.connect(options, function () {
+			doProxy(this, client, true);
 		});
 	}
 
@@ -125,8 +125,12 @@ process.on('uncaughtException', function (err) {
 });
 
 
-function doProxy(potatoSocket, address, port, needCipher) {
+function doProxy(potatoSocket, browser, needCipher) {
 	logger.trace('连上了potato服务器');
+
+	var address = browser.address.address,
+		port = browser.address.port;
+
 	//构造一个信令告诉potato服务器要连接的目标地址
 	var req = Potato.SymbolRequest.Create(address, port);
 	potatoSocket.write(req);//将信令发给potato服务器
@@ -136,7 +140,7 @@ function doProxy(potatoSocket, address, port, needCipher) {
 		var reply = Potato.SymbolPeply.Resolve(data);//解析返回的信号
 		logger.trace(reply);
 
-		client.reply(reply.sig);//将状态发给浏览器
+		browser.reply(reply.sig);//将状态发给浏览器
 		logger.trace('收到的信号：%d，目标地址： %s:%d', reply.sig, address, port);//浏览器收到连通的信号就会开始发送真正的请求数据
 
 		if (needCipher) {
@@ -145,18 +149,18 @@ function doProxy(potatoSocket, address, port, needCipher) {
 			var obfs = new Obfs.ObfsRequest(),
 				deobfs = new Obfs.ObfsResolve();
 
-			client//浏览器的socket
+			browser//浏览器的socket
 				.pipe(cipher)//加密
 				.pipe(obfs)//混淆，伪装成HTTP的提交数据
 				.pipe(potatoSocket)//传给远程代理服务器
 				.pipe(deobfs)//反混淆服务器传回来的数据
 				.pipe(decipher)//将返回的数据解密
-				.pipe(client);//远程代理服务器的数据再回传给浏览器
+				.pipe(browser);//远程代理服务器的数据再回传给浏览器
 		}
 		else {
-			client//浏览器的socket
+			browser//浏览器的socket
 				.pipe(potatoSocket)//传给远程代理服务器
-				.pipe(client);//远程代理服务器的数据再回传给浏览器
+				.pipe(browser);//远程代理服务器的数据再回传给浏览器
 		}
 	});
 
@@ -165,7 +169,7 @@ function doProxy(potatoSocket, address, port, needCipher) {
 		switch (err.code) {
 			case 'ECONNRESET':
 				logger.error('potato服务器断开了连接。%s:%d', address, port);
-				client.end();//断开浏览器连接
+				browser.end();//断开浏览器连接
 				potatoSocket.end();//断开和服务器的连接
 				break;
 			default:
