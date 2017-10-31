@@ -13,11 +13,16 @@ var serverKeyStr = `openssl genrsa -aes256 -passout pass:${password} -out ${cert
 var serverCsrStr = `openssl req -new -passin pass:${password} -key ${certDir}server.key -out ${certDir}server.csr -subj "${camouflage}"`;
 var serverCertStr = `openssl x509 -req -days 3650 -sha256 -extensions v3_req -CA ${certDir}ca.crt -CAkey ${certDir}ca.key -CAserial ${certDir}ca.srl -CAcreateserial -passin pass:${password} -in ${certDir}server.csr -out ${certDir}server.crt`;
 
+console.log(serverKeyStr);
 console.log(serverCsrStr);
+console.log(serverCertStr);
+
 
 (async () => {
-    const { error, stdout, stderr } = await exec(caCertStr);
+    var { error, stdout, stderr } = await exec(serverKeyStr);
     console.log('error:', error);
     console.log('stdout:', stdout);
     console.log('stderr:', stderr);
+    await exec(serverCsrStr);
+    await exec(serverCertStr);
 })();
