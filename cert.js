@@ -5,7 +5,7 @@ const config = require('./config.json');
 
 var password = config.password;
 var camouflage = config.camouflage;
-var certDir = './cert_test/';
+var certDir = './cert/';
 if (!fs.existsSync(certDir)) {
     fs.mkdirSync(certDir);
 }

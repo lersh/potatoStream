@@ -15,6 +15,7 @@
     "server_port": 1999,//服务器的端口
     "local_port": 3000,//本地socks5代理服务器的端口
     "method": "https",//使用本地加密还是https方式加密，如果是http则模拟http方式，https的使用自签名的tls方式来加密传输
+    "camouflage":"/C=CN/ST=Guangdong/...",//需要伪装的域名的证书信息
     "algorithm": "aes-256-cfb",//加密算法，暂时无用。强制使用AES-256-CM
     "password": "password"//密码，需要保持两端一致
 }
@@ -22,9 +23,15 @@
 5. 然后在服务器上运行 node potatoServer.js 如果想后台运行，执行 node potatoServer.js &
 6. 本地运行 node potatoSocks5.js 即可在你指定的端口开启socks5代理
 7. 浏览器里设置socks5代理服务器，就可以安心的浏览了~
+---
+
+ ### 关于camouflage的字符串，一般的构成是这样的：
+
+`/C=国家，两个字母缩写/ST=省，全拼/L=城市，全拼/O=公司全称/OU=部门/CN=域名`
 
 ---
-增加了一个pipe.js，用于中转流量，常见于部分公司网络屏蔽所有国外ip，这时你可以找一台国内的服务器，用pipe.js来中转流量。pipe.js不关心具体的协议无论是http还是https，还是shadowsocks(R)，只要是tcp连接都可以中转。
+### 关于pipe.js
+用于中转流量，常见于部分公司网络屏蔽所有国外ip，这时你可以找一台国内的服务器，用pipe.js来中转流量。pipe.js不关心具体的协议无论是http还是https，还是shadowsocks(R)，只要是tcp连接都可以中转。
 
 - 用法
 
