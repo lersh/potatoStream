@@ -4,7 +4,8 @@ const net = require('net');
 var server = net.createServer();
 
 server.on('connection', function (client) {
-    console.dir(client);
+    //console.dir(client);
+    console.log(client.localAddress + '\t' + client.localPort);
 });
 
 server.listen(1080, '0.0.0.0', () => {
