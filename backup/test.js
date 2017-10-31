@@ -1,5 +1,4 @@
 'use strict'
-const net = require('net');
 var ffi = require('ffi');
 var net = require('net');
 var StructType = require('ref-struct');
