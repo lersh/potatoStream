@@ -6,7 +6,7 @@ var server = net.createServer();
 server.on('connection', function (client) {
     //console.dir(client);
     console.log(client.localAddress + '\t' + client.localPort + '\t' + client.remoteAddress + '\t' + client.remotePort);
-    console.log(client.address);
+    console.log(client.address());
 
     client.on('data', (chunck) => {
         console.log(chunck);
