@@ -2,7 +2,6 @@
 const net = require('net');
 const crypto = require('crypto');
 const stream = require('stream');
-const through2 = require('through2');
 
 const password = '123qweASD';
 

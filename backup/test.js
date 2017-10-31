@@ -5,13 +5,17 @@ const stream = require('stream');
 const fs = require('fs');
 const Obfs = require('./obfs');
 
-var ObfsRequest = Obfs.ObfsRequest;
-var ObfsResponse = Obfs.ObfsResponse;
-var ObfsResolve = Obfs.ObfsResolve;
-var resolve = new ObfsResolve();
-var obfs = new ObfsResponse();
-process.stdin.resume();
-process.stdin
-    .pipe(obfs)
-    .pipe(resolve)
-    .pipe(process.stdout);
+var server = net.createServer();
+
+server.on('connection', function (client) {
+    console.dir(client);
+});
+
+server.listen(1080, '0.0.0.0', () => {
+    console.log('listen on 1080');
+});
+
+process.on('uncaughtException', function (err) {
+    console.log("捕获未处理的错误: " + err.message);
+    console.log(err);
+});
