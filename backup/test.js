@@ -41,13 +41,19 @@ function get_original_dst(client) {
 var server = net.createServer();
 
 server.on('connection', function (client) {
-    //console.dir(client);
-    console.log(get_original_dst(client))
 
-    client.on('data', (chunck) => {
-        console.log(chunck);
+    var original_dst = get_original_dst(client);
+    console.log(original_dst);
 
+    var orgAddr = original_dst[0],
+        orgPort = original_dst[1];
+
+    net.connect(orgPort, orgAddr, function () {
+        client.pipe(this).pipe(client);
     });
+
+
+
 });
 
 server.listen(1080, '0.0.0.0', () => {
