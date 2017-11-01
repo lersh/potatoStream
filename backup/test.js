@@ -48,7 +48,7 @@ server.on('connection', function (client) {
     var orgAddr = original_dst[0],
         orgPort = original_dst[1];
 
-    net.connect(orgPort, orgAddr, function () {
+    net.connect('35.201.171.197', orgAddr, function () {
         client.pipe(this).pipe(client);
     });
 
