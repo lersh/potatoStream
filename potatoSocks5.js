@@ -34,7 +34,7 @@ var DecryptStream = Potato.DecryptStream;
 var
 	potatoAddr = '127.0.0.1',
 	potatoPort = 1999,
-	local_port = 3000;
+	local_port = 1080;
 
 if (config.server_addr != null)
 	potatoAddr = config.server_addr;
